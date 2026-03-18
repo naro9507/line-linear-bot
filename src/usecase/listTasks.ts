@@ -1,6 +1,6 @@
-import { listMyIssues } from "@/infrastructure/linear";
-import { replyMessage } from "@/infrastructure/line";
 import { getUserByLineId } from "@/config/users";
+import { replyMessage } from "@/infrastructure/line";
+import { listMyIssues } from "@/infrastructure/linear";
 import { formatListTasksMessage } from "@/presentation/formatMessage";
 import { USER_NOT_FOUND_MESSAGE } from "@/utils/messages";
 

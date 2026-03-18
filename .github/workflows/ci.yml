@@ -18,3 +18,6 @@ jobs:
 
       - name: Lint & Format check
         run: bun run check
+
+      - name: Test
+        run: bun run test

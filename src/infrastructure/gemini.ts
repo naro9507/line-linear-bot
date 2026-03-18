@@ -1,7 +1,7 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import * as v from "valibot";
 import { env } from "@/config/env";
 import type { Command } from "@/domain/types";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import * as v from "valibot";
 
 // Geminiクライアントの初期化
 const genai = new GoogleGenerativeAI(env.GEMINI_API_KEY);

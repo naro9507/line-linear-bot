@@ -1,9 +1,9 @@
-import { getIssueByIdentifier, searchIssues, completeIssue } from "@/infrastructure/linear";
-import { replyMessage } from "@/infrastructure/line";
 import { getUserByLineId } from "@/config/users";
-import { formatCompleteTaskMessage, formatCandidatesMessage } from "@/presentation/formatMessage";
-import { USER_NOT_FOUND_MESSAGE } from "@/utils/messages";
 import type { Command, LinearIssue } from "@/domain/types";
+import { replyMessage } from "@/infrastructure/line";
+import { completeIssue, getIssueByIdentifier, searchIssues } from "@/infrastructure/linear";
+import { formatCandidatesMessage, formatCompleteTaskMessage } from "@/presentation/formatMessage";
+import { USER_NOT_FOUND_MESSAGE } from "@/utils/messages";
 
 const IDENTIFIER_PATTERN = /^[A-Z]+-\d+$/i;
 
@@ -54,13 +54,16 @@ export async function handleCompleteTask(
   } else {
     candidates = await searchIssues(command.query);
     if (candidates.length === 0) {
-      await replyMessage(replyToken, `⚠️ 「${command.query}」に該当するタスクが見つかりませんでした`);
+      await replyMessage(
+        replyToken,
+        `⚠️ 「${command.query}」に該当するタスクが見つかりませんでした`
+      );
       return;
     }
   }
 
   if (candidates.length === 1) {
-    const completed = await completeIssue(candidates[0]!.id);
+    const completed = await completeIssue(candidates[0]?.id);
     candidatesMap.delete(lineUserId);
     await replyMessage(replyToken, formatCompleteTaskMessage(completed));
   } else {
@@ -92,7 +95,7 @@ export async function handleCompleteSelect(
     return;
   }
 
-  const completed = await completeIssue(candidates[index]!.id);
+  const completed = await completeIssue(candidates[index]?.id);
   candidatesMap.delete(lineUserId);
   await replyMessage(replyToken, formatCompleteTaskMessage(completed));
 }

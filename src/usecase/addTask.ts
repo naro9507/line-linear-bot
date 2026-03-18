@@ -1,9 +1,9 @@
-import { createIssue } from "@/infrastructure/linear";
+import { getUserByAlias, getUserByLineId } from "@/config/users";
+import type { Command } from "@/domain/types";
 import { replyMessage } from "@/infrastructure/line";
-import { getUserByLineId, getUserByAlias } from "@/config/users";
+import { createIssue } from "@/infrastructure/linear";
 import { formatAddTaskMessage } from "@/presentation/formatMessage";
 import { USER_NOT_FOUND_MESSAGE } from "@/utils/messages";
-import type { Command } from "@/domain/types";
 
 export async function handleAddTask(
   command: Extract<Command, { type: "add" }>,

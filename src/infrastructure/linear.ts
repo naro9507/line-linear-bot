@@ -1,13 +1,14 @@
-import { LinearClient } from "@linear/sdk";
 import { env } from "@/config/env";
-import { getJSTDateString } from "@/utils/date";
 import type { LinearIssue } from "@/domain/types";
+import { getJSTDateString } from "@/utils/date";
+import { LinearClient } from "@linear/sdk";
 
 // エディタのGraphQLシンタックスハイライト対応のタグ関数（実態はそのままの文字列）
 const gql = (strings: TemplateStringsArray): string => strings.raw[0] ?? "";
 
 // 全クエリで共通のイシューフィールド選択
-const ISSUE_FIELDS = `id identifier title url state { name type } dueDate priority assignee { id name }`;
+const ISSUE_FIELDS =
+  "id identifier title url state { name type } dueDate priority assignee { id name }";
 
 // Linear APIクライアントの初期化
 const linearClient = new LinearClient({ apiKey: env.LINEAR_API_KEY });

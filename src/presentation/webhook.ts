@@ -1,12 +1,13 @@
+import { replyMessage } from "@/infrastructure/line";
+import { verifyLineSignature } from "@/infrastructure/signature";
+import { handleAddTask } from "@/usecase/addTask";
+import { handleCompleteSelect, handleCompleteTask } from "@/usecase/completeTask";
+import { handleHelp } from "@/usecase/help";
+import { handleListTasks } from "@/usecase/listTasks";
+import { parseCommand } from "@/usecase/parseCommand";
+import { logger } from "@/utils/logger";
 import { Hono } from "hono";
 import * as v from "valibot";
-import { verifyLineSignature } from "@/infrastructure/signature";
-import { replyMessage } from "@/infrastructure/line";
-import { parseCommand } from "@/usecase/parseCommand";
-import { handleAddTask } from "@/usecase/addTask";
-import { handleListTasks } from "@/usecase/listTasks";
-import { handleCompleteTask, handleCompleteSelect } from "@/usecase/completeTask";
-import { handleHelp } from "@/usecase/help";
 
 // ValibotによるWebhookボディのスキーマ定義（unsafe castの代替）
 const LineEventSchema = v.looseObject({
@@ -45,13 +46,13 @@ webhookRouter.post("/webhook", async (c) => {
   // ValibotでボディをパースしてからJSONとして扱う（unsafe cast排除）
   const parseResult = v.safeParse(WebhookBodySchema, JSON.parse(rawBody));
   if (!parseResult.success) {
-    console.error("Webhookボディのパース失敗:", parseResult.issues);
+    logger.error({ issues: parseResult.issues }, "Webhookボディのパース失敗");
     return c.text("OK", 200); // LINEには常に200を返す
   }
 
   // 即座に200を返し、処理は非同期で継続
   processEvents(parseResult.output).catch((err) => {
-    console.error("Webhookイベント処理エラー:", err);
+    logger.error({ err }, "Webhookイベント処理エラー");
   });
 
   return c.text("OK", 200);
@@ -68,7 +69,7 @@ async function processEvents(body: ValidatedWebhookBody): Promise<void> {
         e.source.userId &&
         e.message.text
     )
-    .map((e) => handleMessage(e.message!.text!, e.source.userId!, e.replyToken!));
+    .map((e) => handleMessage(e.message?.text ?? "", e.source.userId ?? "", e.replyToken ?? ""));
 
   await Promise.all(tasks);
 }
@@ -95,12 +96,14 @@ async function handleMessage(text: string, lineUserId: string, replyToken: strin
         break;
     }
   } catch (err) {
-    console.error("メッセージ処理エラー:", err);
+    logger.error({ err, lineUserId, text }, "メッセージ処理エラー");
     const msg = err instanceof Error ? err.message : String(err);
     const reply = msg.toLowerCase().includes("linear")
       ? "⚠️ タスク管理サービスとの通信でエラーが発生しました。時間をおいて再度お試しください"
       : undefined;
 
-    await (reply ? replyMessage(replyToken, reply) : handleHelp(replyToken)).catch(console.error);
+    await (reply ? replyMessage(replyToken, reply) : handleHelp(replyToken)).catch((e) =>
+      logger.error({ err: e }, "エラー返信失敗")
+    );
   }
 }

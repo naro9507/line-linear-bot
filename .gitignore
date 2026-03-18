@@ -8,6 +8,7 @@ infra/node_modules/
 # 環境変数
 .env
 .env.*
+!.env.example
 infra/Pulumi.*.yaml
 !infra/Pulumi.yaml
 !infra/Pulumi.prod.yaml

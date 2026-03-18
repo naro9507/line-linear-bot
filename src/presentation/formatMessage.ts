@@ -1,5 +1,5 @@
-import { getJSTDateString, parseJSTDate } from "@/utils/date";
 import type { LinearIssue } from "@/domain/types";
+import { getJSTDateString, parseJSTDate } from "@/utils/date";
 
 const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"] as const;
 

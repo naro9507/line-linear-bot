@@ -1,4 +1,5 @@
 import { env } from "@/config/env";
+import { logger } from "@/utils/logger";
 
 // Bun組み込みのCrypto API（crypto.subtle）でLINE署名を検証する
 export async function verifyLineSignature(body: string, signature: string): Promise<boolean> {
@@ -24,7 +25,7 @@ export async function verifyLineSignature(body: string, signature: string): Prom
 
     return expectedSignature === signature;
   } catch (err) {
-    console.error("署名検証中にエラーが発生しました:", err);
+    logger.error({ err }, "署名検証中にエラーが発生しました");
     return false;
   }
 }

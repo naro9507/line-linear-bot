@@ -1,8 +1,8 @@
-import { getRemindIssues } from "@/infrastructure/linear";
-import { pushMessage } from "@/infrastructure/line";
 import { getUserByLinearId } from "@/config/users";
-import { getJSTDateString, parseJSTDate } from "@/utils/date";
 import type { LinearIssue } from "@/domain/types";
+import { pushMessage } from "@/infrastructure/line";
+import { getRemindIssues } from "@/infrastructure/linear";
+import { getJSTDateString, parseJSTDate } from "@/utils/date";
 
 function buildRemindMessage(todayIssues: LinearIssue[], tomorrowIssues: LinearIssue[]): string {
   const todayStr = getJSTDateString();
@@ -12,14 +12,14 @@ function buildRemindMessage(todayIssues: LinearIssue[], tomorrowIssues: LinearIs
   let msg = `⏰ おはようございます！（${dateStr}）`;
 
   if (todayIssues.length > 0) {
-    msg += `\n\n🔥 今日が期限：`;
+    msg += "\n\n🔥 今日が期限：";
     for (const issue of todayIssues) {
       msg += `\n  [${issue.identifier}] ${issue.title}`;
     }
   }
 
   if (tomorrowIssues.length > 0) {
-    msg += `\n\n⚠️ 明日が期限：`;
+    msg += "\n\n⚠️ 明日が期限：";
     for (const issue of tomorrowIssues) {
       msg += `\n  [${issue.identifier}] ${issue.title}`;
     }
@@ -42,6 +42,7 @@ export async function runReminder(): Promise<void> {
     if (!issue.assignee) continue;
     const uid = issue.assignee.id;
     if (!byUser.has(uid)) byUser.set(uid, { today: [], tomorrow: [] });
+    // biome-ignore lint/style/noNonNullAssertion: uid は直前の has() で存在確認済み
     const entry = byUser.get(uid)!;
     if (issue.dueDate === today) entry.today.push(issue);
     else if (issue.dueDate === tomorrow) entry.tomorrow.push(issue);

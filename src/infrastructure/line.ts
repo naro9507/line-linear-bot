@@ -1,5 +1,5 @@
-import { messagingApi } from "@line/bot-sdk";
 import { env } from "@/config/env";
+import { messagingApi } from "@line/bot-sdk";
 
 // LINE Messaging API クライアントの初期化
 const client = new messagingApi.MessagingApiClient({

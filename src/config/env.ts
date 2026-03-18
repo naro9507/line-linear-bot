@@ -3,7 +3,10 @@ import * as v from "valibot";
 // 環境変数のスキーマ定義
 const EnvSchema = v.object({
   LINE_CHANNEL_SECRET: v.pipe(v.string(), v.minLength(1, "LINE_CHANNEL_SECRET is required")),
-  LINE_CHANNEL_ACCESS_TOKEN: v.pipe(v.string(), v.minLength(1, "LINE_CHANNEL_ACCESS_TOKEN is required")),
+  LINE_CHANNEL_ACCESS_TOKEN: v.pipe(
+    v.string(),
+    v.minLength(1, "LINE_CHANNEL_ACCESS_TOKEN is required")
+  ),
   LINEAR_API_KEY: v.pipe(v.string(), v.minLength(1, "LINEAR_API_KEY is required")),
   LINEAR_TEAM_ID: v.pipe(v.string(), v.minLength(1, "LINEAR_TEAM_ID is required")),
   REMIND_SECRET: v.pipe(v.string(), v.minLength(1, "REMIND_SECRET is required")),

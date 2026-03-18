@@ -1,4 +1,4 @@
-.PHONY: setup setup-app setup-infra dev start build check check-fix \
+.PHONY: setup setup-app setup-infra dev start build check check-fix test \
         infra-preview infra-up
 
 # ---- セットアップ ----
@@ -35,6 +35,10 @@ check:
 ## Biome lint/format 自動修正
 check-fix:
 	bun run check:fix
+
+## ユニットテスト実行
+test:
+	bun run test
 
 # ---- インフラ (Pulumi) ----
 
