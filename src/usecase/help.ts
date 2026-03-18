@@ -1,6 +1,5 @@
-import { replyMessage } from "../services/line.js"
+import { replyMessage } from "@/infrastructure/line";
 
-// ヘルプメッセージ
 const HELP_MESSAGE = `📖 使い方ガイド
 
 📝 タスク追加
@@ -13,9 +12,8 @@ const HELP_MESSAGE = `📖 使い方ガイド
 ✅ タスク完了
   「完了 ENG-42」or「完了 〇〇」
 
-わからないことがあれば「ヘルプ」と送ってね！`
+わからないことがあれば「ヘルプ」と送ってね！`;
 
-// ヘルプコマンドを処理する
 export async function handleHelp(replyToken: string): Promise<void> {
-  await replyMessage(replyToken, HELP_MESSAGE)
+  await replyMessage(replyToken, HELP_MESSAGE);
 }

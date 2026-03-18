@@ -1,23 +1,16 @@
-import { Hono } from "hono"
-import { env } from "./config/env.js"
-import { webhookRouter } from "./routes/webhook.js"
-import { remindRouter } from "./routes/remind.js"
+import { Hono } from "hono";
+import { env } from "@/config/env";
+import { webhookRouter } from "@/presentation/webhook";
+import { remindRouter } from "@/presentation/remind";
 
-// Honoアプリケーションの初期化
-const app = new Hono()
+const app = new Hono();
 
-// ルーティング
-app.route("/", webhookRouter)
-app.route("/", remindRouter)
+app.route("/", webhookRouter);
+app.route("/", remindRouter);
 
-// ヘルスチェック
-app.get("/health", (c) => c.json({ status: "ok" }))
+app.get("/health", (c) => c.json({ status: "ok" }));
 
-// サーバー起動
-const port = parseInt(env.PORT ?? "8080", 10)
-console.log(`サーバーを起動します: port ${port}`)
+const port = Number.parseInt(env.PORT, 10);
+console.log(`サーバーを起動します: port ${port}`);
 
-export default {
-  port,
-  fetch: app.fetch,
-}
+export default { port, fetch: app.fetch };

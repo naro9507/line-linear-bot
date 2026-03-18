@@ -2,12 +2,19 @@
   "name": "line-linear-bot",
   "scripts": {
     "dev": "bun run --watch src/index.ts",
-    "start": "bun run src/index.ts"
+    "start": "bun run src/index.ts",
+    "check": "biome check .",
+    "check:fix": "biome check --write ."
   },
   "dependencies": {
+    "@google/generative-ai": "^0.21.0",
     "@line/bot-sdk": "^9.x",
     "@linear/sdk": "^21.x",
     "hono": "^4.x",
     "valibot": "^1.x"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.0",
+    "bun-types": "latest"
   }
 }
