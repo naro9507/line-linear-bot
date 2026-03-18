@@ -5,9 +5,9 @@ RUN bun install --frozen-lockfile
 COPY . .
 RUN bun build ./src/index.ts --outdir ./dist --target bun
 
-FROM oven/bun:1-alpine
+FROM gcr.io/distroless/cc-debian12
 WORKDIR /app
 COPY --from=builder /app/dist ./dist
 ENV PORT=8080
 EXPOSE 8080
-CMD ["bun", "dist/index.js"]
+CMD ["dist/index.js"]
