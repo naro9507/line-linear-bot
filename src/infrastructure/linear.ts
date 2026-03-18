@@ -1,9 +1,13 @@
 import { LinearClient } from "@linear/sdk";
 import { env } from "@/config/env";
+import { getJSTDateString } from "@/utils/date";
 import type { LinearIssue } from "@/domain/types";
 
 // エディタのGraphQLシンタックスハイライト対応のタグ関数（実態はそのままの文字列）
 const gql = (strings: TemplateStringsArray): string => strings.raw[0] ?? "";
+
+// 全クエリで共通のイシューフィールド選択
+const ISSUE_FIELDS = `id identifier title url state { name type } dueDate priority assignee { id name }`;
 
 // Linear APIクライアントの初期化
 const linearClient = new LinearClient({ apiKey: env.LINEAR_API_KEY });
@@ -16,16 +20,13 @@ export async function createIssue(params: {
   priority?: number | null;
 }): Promise<LinearIssue> {
   const result = await linearClient.client.rawRequest<{
-    issueCreate: {
-      success: boolean;
-      issue: IssueNode;
-    };
+    issueCreate: { success: boolean; issue: IssueNode };
   }>(
     gql`
       mutation IssueCreate($input: IssueCreateInput!) {
         issueCreate(input: $input) {
           success
-          issue { id identifier title url state { name type } dueDate priority assignee { id name } }
+          issue { ${ISSUE_FIELDS} }
         }
       }
     `,
@@ -49,12 +50,7 @@ export async function listMyIssues(linearUserId: string): Promise<LinearIssue[]>
     gql`
       query MyIssues($filter: IssueFilter) {
         issues(filter: $filter) {
-          nodes {
-            id identifier title url
-            state { name type }
-            dueDate priority
-            assignee { id name }
-          }
+          nodes { ${ISSUE_FIELDS} }
         }
       }
     `,
@@ -75,12 +71,7 @@ export async function searchIssues(query: string): Promise<LinearIssue[]> {
     gql`
       query SearchIssues($filter: IssueFilter) {
         issues(filter: $filter) {
-          nodes {
-            id identifier title url
-            state { name type }
-            dueDate priority
-            assignee { id name }
-          }
+          nodes { ${ISSUE_FIELDS} }
         }
       }
     `,
@@ -101,12 +92,7 @@ export async function getIssueByIdentifier(identifier: string): Promise<LinearIs
     gql`
       query GetIssueByIdentifier($filter: IssueFilter) {
         issues(filter: $filter) {
-          nodes {
-            id identifier title url
-            state { name type }
-            dueDate priority
-            assignee { id name }
-          }
+          nodes { ${ISSUE_FIELDS} }
         }
       }
     `,
@@ -119,7 +105,6 @@ export async function getIssueByIdentifier(identifier: string): Promise<LinearIs
 
 // タスクを完了状態に更新する
 export async function completeIssue(id: string): Promise<LinearIssue> {
-  // まず Done ステートのIDを取得する
   const teamResult = await linearClient.client.rawRequest<{
     team: { states: { nodes: Array<{ id: string; name: string; type: string }> } };
   }>(
@@ -134,7 +119,10 @@ export async function completeIssue(id: string): Promise<LinearIssue> {
   );
 
   const doneState = teamResult.team.states.nodes.find((s) => s.type === "completed");
-  if (!doneState) throw new Error("Doneステートが見つかりません");
+  if (!doneState) {
+    const available = teamResult.team.states.nodes.map((s) => s.type).join(", ");
+    throw new Error(`Doneステートが見つかりません。利用可能なステート: ${available}`);
+  }
 
   const result = await linearClient.client.rawRequest<{
     issueUpdate: { success: boolean; issue: IssueNode };
@@ -143,7 +131,7 @@ export async function completeIssue(id: string): Promise<LinearIssue> {
       mutation IssueUpdate($id: String!, $input: IssueUpdateInput!) {
         issueUpdate(id: $id, input: $input) {
           success
-          issue { id identifier title url state { name type } dueDate priority assignee { id name } }
+          issue { ${ISSUE_FIELDS} }
         }
       }
     `,
@@ -155,23 +143,14 @@ export async function completeIssue(id: string): Promise<LinearIssue> {
 
 // リマインド対象のイシューを取得する（期限が今日または明日）
 export async function getRemindIssues(): Promise<LinearIssue[]> {
-  const today = new Date();
-  const tomorrow = new Date(today);
-  tomorrow.setDate(today.getDate() + 1);
-
-  const todayStr = today.toISOString().split("T")[0];
-  const tomorrowStr = tomorrow.toISOString().split("T")[0];
+  const todayStr = getJSTDateString();
+  const tomorrowStr = getJSTDateString(1);
 
   const result = await linearClient.client.rawRequest<{ issues: { nodes: IssueNode[] } }>(
     gql`
       query RemindIssues($filter: IssueFilter) {
         issues(filter: $filter) {
-          nodes {
-            id identifier title url
-            state { name type }
-            dueDate priority
-            assignee { id name }
-          }
+          nodes { ${ISSUE_FIELDS} }
         }
       }
     `,

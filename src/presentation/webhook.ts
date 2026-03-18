@@ -9,22 +9,20 @@ import { handleCompleteTask, handleCompleteSelect } from "@/usecase/completeTask
 import { handleHelp } from "@/usecase/help";
 
 // ValibotによるWebhookボディのスキーマ定義（unsafe castの代替）
-const LineMessageSchema = v.looseObject({
-  type: v.string(),
-  id: v.string(),
-  text: v.optional(v.string()),
-});
-
-const LineSourceSchema = v.looseObject({
-  type: v.string(),
-  userId: v.optional(v.string()),
-});
-
 const LineEventSchema = v.looseObject({
   type: v.string(),
   replyToken: v.optional(v.string()),
-  source: LineSourceSchema,
-  message: v.optional(LineMessageSchema),
+  source: v.looseObject({
+    type: v.string(),
+    userId: v.optional(v.string()),
+  }),
+  message: v.optional(
+    v.looseObject({
+      type: v.string(),
+      id: v.string(),
+      text: v.optional(v.string()),
+    })
+  ),
 });
 
 const WebhookBodySchema = v.object({
@@ -60,17 +58,19 @@ webhookRouter.post("/webhook", async (c) => {
 });
 
 async function processEvents(body: ValidatedWebhookBody): Promise<void> {
-  for (const event of body.events) {
-    if (event.type !== "message") continue;
-    if (event.message?.type !== "text") continue;
-    if (!event.replyToken) continue;
+  // テキストメッセージイベントのみ抽出して並列処理
+  const tasks = body.events
+    .filter(
+      (e) =>
+        e.type === "message" &&
+        e.message?.type === "text" &&
+        e.replyToken &&
+        e.source.userId &&
+        e.message.text
+    )
+    .map((e) => handleMessage(e.message!.text!, e.source.userId!, e.replyToken!));
 
-    const lineUserId = event.source.userId;
-    const text = event.message.text;
-    if (!lineUserId || !text) continue;
-
-    await handleMessage(text, lineUserId, event.replyToken);
-  }
+  await Promise.all(tasks);
 }
 
 async function handleMessage(text: string, lineUserId: string, replyToken: string): Promise<void> {

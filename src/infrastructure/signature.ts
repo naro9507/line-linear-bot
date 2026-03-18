@@ -23,7 +23,8 @@ export async function verifyLineSignature(body: string, signature: string): Prom
     const expectedSignature = btoa(String.fromCharCode(...new Uint8Array(signatureBuffer)));
 
     return expectedSignature === signature;
-  } catch {
+  } catch (err) {
+    console.error("署名検証中にエラーが発生しました:", err);
     return false;
   }
 }

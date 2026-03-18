@@ -2,6 +2,7 @@ import { createIssue } from "@/infrastructure/linear";
 import { replyMessage } from "@/infrastructure/line";
 import { getUserByLineId, getUserByAlias } from "@/config/users";
 import { formatAddTaskMessage } from "@/presentation/formatMessage";
+import { USER_NOT_FOUND_MESSAGE } from "@/utils/messages";
 import type { Command } from "@/domain/types";
 
 export async function handleAddTask(
@@ -11,10 +12,7 @@ export async function handleAddTask(
 ): Promise<void> {
   const sender = getUserByLineId(lineUserId);
   if (!sender) {
-    await replyMessage(
-      replyToken,
-      "⚠️ あなたのアカウントがまだ登録されていません。管理者に連絡してください"
-    );
+    await replyMessage(replyToken, USER_NOT_FOUND_MESSAGE);
     return;
   }
 

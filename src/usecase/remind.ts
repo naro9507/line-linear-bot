@@ -1,18 +1,12 @@
 import { getRemindIssues } from "@/infrastructure/linear";
 import { pushMessage } from "@/infrastructure/line";
 import { getUserByLinearId } from "@/config/users";
+import { getJSTDateString, parseJSTDate } from "@/utils/date";
 import type { LinearIssue } from "@/domain/types";
 
-// 今日/明日の日付をJSTで取得
-function getJSTDate(offsetDays = 0): string {
-  const d = new Date(Date.now() + 9 * 60 * 60 * 1000);
-  d.setDate(d.getDate() + offsetDays);
-  return d.toISOString().split("T")[0]!;
-}
-
 function buildRemindMessage(todayIssues: LinearIssue[], tomorrowIssues: LinearIssue[]): string {
-  const today = getJSTDate();
-  const d = new Date(`${today}T00:00:00+09:00`);
+  const todayStr = getJSTDateString();
+  const d = parseJSTDate(todayStr);
   const dateStr = `${d.getMonth() + 1}/${d.getDate()}`;
 
   let msg = `⏰ おはようございます！（${dateStr}）`;
@@ -38,8 +32,8 @@ export async function runReminder(): Promise<void> {
   const issues = await getRemindIssues();
   if (issues.length === 0) return;
 
-  const today = getJSTDate();
-  const tomorrow = getJSTDate(1);
+  const today = getJSTDateString();
+  const tomorrow = getJSTDateString(1);
 
   // LinearユーザーIDごとにグルーピング
   const byUser = new Map<string, { today: LinearIssue[]; tomorrow: LinearIssue[] }>();
@@ -53,10 +47,13 @@ export async function runReminder(): Promise<void> {
     else if (issue.dueDate === tomorrow) entry.tomorrow.push(issue);
   }
 
-  for (const [linearUserId, { today: t, tomorrow: tm }] of byUser) {
-    if (t.length === 0 && tm.length === 0) continue;
-    const mapping = getUserByLinearId(linearUserId);
-    if (!mapping) continue;
-    await pushMessage(mapping.lineUserId, buildRemindMessage(t, tm));
-  }
+  // 各ユーザーへ並列で通知を送信
+  await Promise.all(
+    Array.from(byUser).map(([linearUserId, { today: t, tomorrow: tm }]) => {
+      if (t.length === 0 && tm.length === 0) return Promise.resolve();
+      const mapping = getUserByLinearId(linearUserId);
+      if (!mapping) return Promise.resolve();
+      return pushMessage(mapping.lineUserId, buildRemindMessage(t, tm));
+    })
+  );
 }

@@ -3,26 +3,34 @@ import type { UserMapping } from "@/domain/types";
 
 // USER_MAP_JSON 環境変数からユーザーマッピングを注入する
 // 例: '[{"lineUserId":"U...","linearUserId":"xxx...","displayName":"山田","aliases":["yamada","@yamada"]}]'
-let parsedUserMap: UserMapping[];
+let parsed: UserMapping[];
 try {
-  parsedUserMap = JSON.parse(env.USER_MAP_JSON) as UserMapping[];
-} catch {
-  throw new Error("USER_MAP_JSON の JSON パースに失敗しました");
+  parsed = JSON.parse(env.USER_MAP_JSON) as UserMapping[];
+} catch (e) {
+  throw new Error(
+    `USER_MAP_JSON の JSON パースに失敗しました: ${e instanceof Error ? e.message : String(e)}`
+  );
 }
 
-export const USER_MAP: UserMapping[] = parsedUserMap;
+export const USER_MAP: UserMapping[] = parsed;
 
-// LINEユーザーIDからマッピングを取得
-export function getUserByLineId(lineUserId: string): UserMapping | undefined {
-  return USER_MAP.find((u) => u.lineUserId === lineUserId);
+// O(1) ルックアップ用インデックス（起動時に一度だけ構築）
+const byLineId = new Map<string, UserMapping>();
+const byLinearId = new Map<string, UserMapping>();
+const byAlias = new Map<string, UserMapping>();
+
+for (const user of USER_MAP) {
+  byLineId.set(user.lineUserId, user);
+  byLinearId.set(user.linearUserId, user);
+  for (const alias of user.aliases) {
+    byAlias.set(alias, user);
+  }
 }
 
-// エイリアスからマッピングを取得
-export function getUserByAlias(alias: string): UserMapping | undefined {
-  return USER_MAP.find((u) => u.aliases.includes(alias));
-}
+export const getUserByLineId = (lineUserId: string): UserMapping | undefined =>
+  byLineId.get(lineUserId);
 
-// LinearユーザーIDからマッピングを取得
-export function getUserByLinearId(linearUserId: string): UserMapping | undefined {
-  return USER_MAP.find((u) => u.linearUserId === linearUserId);
-}
+export const getUserByAlias = (alias: string): UserMapping | undefined => byAlias.get(alias);
+
+export const getUserByLinearId = (linearUserId: string): UserMapping | undefined =>
+  byLinearId.get(linearUserId);
