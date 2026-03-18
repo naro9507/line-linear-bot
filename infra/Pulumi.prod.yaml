@@ -4,3 +4,5 @@ config:
   gcp:project: your-gcp-project-id
   gcp:region: asia-northeast1
   line-linear-bot-infra:imageTag: latest
+  line-linear-bot-infra:githubOwner: your-github-org-or-user
+  line-linear-bot-infra:githubRepo: line-linear-bot

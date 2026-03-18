@@ -134,7 +134,52 @@ new gcp.cloudscheduler.Job("remind-job", {
   },
 });
 
+// ---- Cloud Build ----
+
+// Cloud Build SA に Artifact Registry への push 権限を付与
+const cloudbuildSa = gcp.projects.getServiceIdentityOutput({
+  project,
+  service: "cloudbuild.googleapis.com",
+});
+
+new gcp.artifactregistry.RepositoryIamMember("cloudbuild-registry-push", {
+  repository: registry.repositoryId,
+  location: region,
+  role: "roles/artifactregistry.writer",
+  member: pulumi.interpolate`serviceAccount:${cloudbuildSa.email}`,
+});
+
+// Cloud Build SA に Cloud Run のデプロイ権限を付与
+new gcp.projects.IAMMember("cloudbuild-run-deploy", {
+  project,
+  role: "roles/run.developer",
+  member: pulumi.interpolate`serviceAccount:${cloudbuildSa.email}`,
+});
+
+// Cloud Build SA が Cloud Run SA を act-as できるように
+new gcp.serviceaccount.IAMMember("cloudbuild-sa-user", {
+  serviceAccountId: runSa.name,
+  role: "roles/iam.serviceAccountUser",
+  member: pulumi.interpolate`serviceAccount:${cloudbuildSa.email}`,
+});
+
+// main ブランチへの push で cloudbuild.yaml を実行するトリガー
+const buildTrigger = new gcp.cloudbuild.Trigger("deploy-trigger", {
+  name: "line-linear-bot-deploy",
+  location: region,
+  filename: "cloudbuild.yaml",
+  github: {
+    owner: config.require("githubOwner"),
+    name: config.require("githubRepo"),
+    push: { branch: "^main$" },
+  },
+  substitutions: {
+    // cloudbuild.yaml 内で $PROJECT_ID と $SHORT_SHA は Cloud Build が自動で提供
+  },
+});
+
 // ---- Outputs ----
 
 export const serviceUrl = cloudRunService.uri;
 export const registryUrl = imageBase;
+export const buildTriggerId = buildTrigger.triggerId;
