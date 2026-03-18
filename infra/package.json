@@ -1,0 +1,10 @@
+{
+  "name": "line-linear-bot-infra",
+  "devDependencies": {
+    "@types/node": "^22.x"
+  },
+  "dependencies": {
+    "@pulumi/gcp": "^8.x",
+    "@pulumi/pulumi": "^3.x"
+  }
+}

@@ -1,0 +1,13 @@
+node_modules/
+dist/
+
+# Pulumi
+infra/node_modules/
+.pulumi/
+
+# 環境変数
+.env
+.env.*
+infra/Pulumi.*.yaml
+!infra/Pulumi.yaml
+!infra/Pulumi.prod.yaml

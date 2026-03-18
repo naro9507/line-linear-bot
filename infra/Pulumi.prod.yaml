@@ -1,0 +1,6 @@
+# Pulumiスタック設定（prodスタック）
+# シークレット値はここに書かず gcloud secrets versions add で登録すること
+config:
+  gcp:project: your-gcp-project-id
+  gcp:region: asia-northeast1
+  line-linear-bot-infra:imageTag: latest
