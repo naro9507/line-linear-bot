@@ -1,0 +1,3 @@
+name: line-linear-bot-infra
+runtime: nodejs
+description: GCP infrastructure for LINE Bot × Linear task management
