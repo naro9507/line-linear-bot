@@ -36,7 +36,8 @@ const schedulerSa = new gcp.serviceaccount.Account("scheduler-sa", {
 
 // ---- Secret Manager ----
 
-// シークレットのキー名一覧（値は gcloud secrets versions add で手動登録）
+// シークレットのキー名一覧
+// 値は `pulumi config set --secret <KEY> <VALUE>` で管理する
 const secretNames = [
   "LINE_CHANNEL_SECRET",
   "LINE_CHANNEL_ACCESS_TOKEN",
@@ -48,15 +49,30 @@ const secretNames = [
   "USER_MAP_JSON",
 ] as const;
 
+type SecretName = (typeof secretNames)[number];
+
+// Pulumi Config に設定されている場合はシークレットバージョンも作成する
+// 未設定の場合はシェル（リソース定義）のみ作成し、値は後から追加可能
 const secrets = Object.fromEntries(
-  secretNames.map((name) => [
-    name,
-    new gcp.secretmanager.Secret(name.toLowerCase().replace(/_/g, "-"), {
+  secretNames.map((name) => {
+    const configKey = name.toLowerCase().replace(/_/g, "-");
+    const secretValue = config.getSecret(configKey);
+
+    const secret = new gcp.secretmanager.Secret(configKey, {
       secretId: name,
       replication: { auto: {} },
-    }),
-  ])
-) as Record<(typeof secretNames)[number], gcp.secretmanager.Secret>;
+    });
+
+    if (secretValue) {
+      new gcp.secretmanager.SecretVersion(`${configKey}-version`, {
+        secret: secret.id,
+        secretData: secretValue,
+      });
+    }
+
+    return [name, secret];
+  })
+) as Record<SecretName, gcp.secretmanager.Secret>;
 
 // Cloud Run SA に全シークレットへのアクセス権を付与
 for (const [name, secret] of Object.entries(secrets)) {

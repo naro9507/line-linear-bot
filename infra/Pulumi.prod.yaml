@@ -1,8 +1,20 @@
 # Pulumiスタック設定（prodスタック）
-# シークレット値はここに書かず gcloud secrets versions add で登録すること
+# シークレット値は `pulumi config set --secret <key> <value>` で登録する
+# 登録すると暗号化された状態でこのファイルに追記される
+#
+# 設定例:
+#   pulumi config set --secret line-linear-bot-infra:line-channel-secret "xxxxx"
+#   pulumi config set --secret line-linear-bot-infra:line-channel-access-token "xxxxx"
+#   pulumi config set --secret line-linear-bot-infra:linear-api-key "xxxxx"
+#   pulumi config set --secret line-linear-bot-infra:linear-team-id "xxxxx"
+#   pulumi config set --secret line-linear-bot-infra:remind-secret "xxxxx"
+#   pulumi config set --secret line-linear-bot-infra:gemini-api-key "xxxxx"
+#   pulumi config set line-linear-bot-infra:gemini-model "gemini-2.0-flash"
+#   pulumi config set line-linear-bot-infra:user-map-json '[{"lineUserId":"..."}]'
 config:
   gcp:project: your-gcp-project-id
   gcp:region: asia-northeast1
   line-linear-bot-infra:imageTag: latest
   line-linear-bot-infra:githubOwner: your-github-org-or-user
   line-linear-bot-infra:githubRepo: line-linear-bot
+  # シークレット値は pulumi config set --secret で追加すると以下に暗号化されて追記される
