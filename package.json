@@ -1,0 +1,13 @@
+{
+  "name": "line-linear-bot",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "start": "bun run src/index.ts"
+  },
+  "dependencies": {
+    "@line/bot-sdk": "^9.x",
+    "@linear/sdk": "^21.x",
+    "hono": "^4.x",
+    "valibot": "^1.x"
+  }
+}

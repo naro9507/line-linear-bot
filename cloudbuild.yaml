@@ -1,0 +1,38 @@
+steps:
+  # Dockerイメージのビルド
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - build
+      - "-t"
+      - "gcr.io/$PROJECT_ID/line-linear-bot:$COMMIT_SHA"
+      - "-t"
+      - "gcr.io/$PROJECT_ID/line-linear-bot:latest"
+      - "."
+
+  # Artifact Registryへのプッシュ
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - push
+      - "gcr.io/$PROJECT_ID/line-linear-bot:$COMMIT_SHA"
+
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - push
+      - "gcr.io/$PROJECT_ID/line-linear-bot:latest"
+
+  # Cloud Runへのデプロイ
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - line-linear-bot
+      - "--image=gcr.io/$PROJECT_ID/line-linear-bot:$COMMIT_SHA"
+      - "--region=asia-northeast1"
+      - "--platform=managed"
+      - "--allow-unauthenticated"
+      - "--port=8080"
+
+images:
+  - "gcr.io/$PROJECT_ID/line-linear-bot:$COMMIT_SHA"
+  - "gcr.io/$PROJECT_ID/line-linear-bot:latest"
