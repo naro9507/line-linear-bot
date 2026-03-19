@@ -1,7 +1,7 @@
 ---
 name: architecture-validator
 description: レイヤードアーキテクチャの依存方向・import ルール・境界侵犯を Grep で実際に検索して検証する。「アーキテクチャチェック」「依存関係を確認」などと言われたら使う。
-tools: Grep, Glob, Read, Bash
+tools: Grep, Glob, Read
 model: sonnet
 ---
 
@@ -50,9 +50,15 @@ grep -rn "@/presentation/" src/infrastructure/
 ```
 期待: ヒットなし
 
+**usecase → presentation の参照（逆方向・禁止）**
+```bash
+grep -rn "@/presentation/" src/usecase/
+```
+期待: ヒットなし
+
 **domain 層からの実装参照（禁止）**
 ```bash
-grep -rn "@/\(usecase\|infrastructure\|presentation\)/" src/domain/
+grep -rn -E "@/(usecase|infrastructure|presentation)/" src/domain/
 ```
 期待: ヒットなし
 
