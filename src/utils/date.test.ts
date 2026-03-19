@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, jest } from "bun:test";
+import { afterEach, describe, expect, it, spyOn } from "bun:test";
 import { getJSTDateString, parseJSTDate } from "@/utils/date";
 
 // 2024-01-15T00:00:00Z = 1705276800000
@@ -8,7 +8,7 @@ const JAN_14_UTC_LATE = new Date("2024-01-14T15:59:59Z").getTime();
 // 2024-01-31T00:00:00Z
 const JAN_31_UTC = new Date("2024-01-31T00:00:00Z").getTime();
 
-let spy: ReturnType<typeof jest.spyOn>;
+let spy: ReturnType<typeof spyOn>;
 
 afterEach(() => {
   spy?.mockRestore();
@@ -16,27 +16,27 @@ afterEach(() => {
 
 describe("getJSTDateString", () => {
   it("UTC midnight → JST 09:00 として当日を返す", () => {
-    spy = jest.spyOn(Date, "now").mockReturnValue(JAN_15_UTC);
+    spy = spyOn(Date, "now").mockReturnValue(JAN_15_UTC);
     expect(getJSTDateString()).toBe("2024-01-15");
   });
 
   it("UTC 15:59 → JST 翌日 00:59 として翌日を返す", () => {
-    spy = jest.spyOn(Date, "now").mockReturnValue(JAN_14_UTC_LATE);
+    spy = spyOn(Date, "now").mockReturnValue(JAN_14_UTC_LATE);
     expect(getJSTDateString()).toBe("2024-01-15");
   });
 
   it("offsetDays=1 で翌日を返す", () => {
-    spy = jest.spyOn(Date, "now").mockReturnValue(JAN_15_UTC);
+    spy = spyOn(Date, "now").mockReturnValue(JAN_15_UTC);
     expect(getJSTDateString(1)).toBe("2024-01-16");
   });
 
   it("offsetDays=-1 で前日を返す", () => {
-    spy = jest.spyOn(Date, "now").mockReturnValue(JAN_15_UTC);
+    spy = spyOn(Date, "now").mockReturnValue(JAN_15_UTC);
     expect(getJSTDateString(-1)).toBe("2024-01-14");
   });
 
   it("月末をまたぐ offset を正しく処理する", () => {
-    spy = jest.spyOn(Date, "now").mockReturnValue(JAN_31_UTC);
+    spy = spyOn(Date, "now").mockReturnValue(JAN_31_UTC);
     expect(getJSTDateString(1)).toBe("2024-02-01");
   });
 });

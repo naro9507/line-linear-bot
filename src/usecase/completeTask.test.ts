@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, jest, mock } from "bun:test";
+import { beforeEach, describe, expect, it, jest, mock, spyOn } from "bun:test";
 import type { LinearIssue } from "@/domain/types";
 
 const mockReplyMessage = jest.fn();
@@ -157,7 +157,7 @@ describe("handleCompleteSelect", () => {
   it("TTL（10分）経過後は候補が失効する", async () => {
     const now = 1705276800000; // 2024-01-15T00:00:00Z
     let currentTime = now;
-    const dateSpy = jest.spyOn(Date, "now").mockImplementation(() => currentTime);
+    const dateSpy = spyOn(Date, "now").mockImplementation(() => currentTime);
 
     mockGetUserByLineId.mockReturnValue(MOCK_USER);
     mockSearchIssues.mockResolvedValue(MOCK_ISSUES);
