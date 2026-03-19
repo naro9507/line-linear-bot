@@ -1,0 +1,25 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /home/user/line-linear-bot && bun run check:fix 2>&1 | tail -20"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /home/user/line-linear-bot && echo '## セッション終了: CLAUDE.md の更新を確認してください' && git diff --stat HEAD 2>/dev/null | head -20"
+          }
+        ]
+      }
+    ]
+  }
+}
