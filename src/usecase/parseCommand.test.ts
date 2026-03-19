@@ -1,6 +1,6 @@
-import { describe, expect, it, jest, mock } from "bun:test";
+import { describe, expect, it, mock } from "bun:test";
 
-const mockParseMessageWithGemini = jest.fn();
+const mockParseMessageWithGemini = mock();
 
 mock.module("@/infrastructure/gemini", () => ({
   parseMessageWithGemini: mockParseMessageWithGemini,

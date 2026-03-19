@@ -1,13 +1,13 @@
-import { beforeEach, describe, expect, it, jest, mock, spyOn } from "bun:test";
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 import type { LinearIssue } from "@/domain/types";
 
-const mockReplyMessage = jest.fn();
-const mockGetUserByLineId = jest.fn();
-const mockGetIssueByIdentifier = jest.fn();
-const mockSearchIssues = jest.fn();
-const mockCompleteIssue = jest.fn();
-const mockFormatCompleteTaskMessage = jest.fn(() => "✅ 完了しました");
-const mockFormatCandidatesMessage = jest.fn(() => "候補リスト");
+const mockReplyMessage = mock();
+const mockGetUserByLineId = mock();
+const mockGetIssueByIdentifier = mock();
+const mockSearchIssues = mock();
+const mockCompleteIssue = mock();
+const mockFormatCompleteTaskMessage = mock(() => "✅ 完了しました");
+const mockFormatCandidatesMessage = mock(() => "候補リスト");
 
 mock.module("@/infrastructure/line", () => ({ replyMessage: mockReplyMessage }));
 mock.module("@/config/users", () => ({ getUserByLineId: mockGetUserByLineId }));
