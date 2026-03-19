@@ -1,5 +1,6 @@
 import { env } from "@/config/env";
 import { messagingApi } from "@line/bot-sdk";
+import { SignJWT, importPKCS8 } from "jose";
 
 // ---- チャネルアクセストークン v2.1 ----
 
@@ -10,61 +11,25 @@ interface TokenCache {
 
 let tokenCache: TokenCache | null = null;
 
-function pemToDer(pem: string): ArrayBuffer {
-  const base64 = pem.replace(/-----[A-Z ]+-----/g, "").replace(/\s/g, "");
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return bytes.buffer;
-}
-
-function b64url(buf: ArrayBuffer): string {
-  const bytes = new Uint8Array(buf);
-  let str = "";
-  for (const byte of bytes) {
-    str += String.fromCharCode(byte);
-  }
-  return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
-}
-
 async function issueToken(): Promise<TokenCache> {
   const now = Math.floor(Date.now() / 1000);
-  const enc = new TextEncoder();
-
-  const headerB64 = b64url(
-    enc.encode(JSON.stringify({ alg: "RS256", typ: "JWT", kid: env.LINE_KEY_ID }))
-  );
-  const payloadB64 = b64url(
-    enc.encode(
-      JSON.stringify({
-        iss: env.LINE_CHANNEL_ID,
-        sub: env.LINE_CHANNEL_ID,
-        aud: "https://api.line.biz/",
-        exp: now + 1800, // アサーション JWT の有効期限（30分）
-        token_exp: 2592000, // 発行するトークンの有効期限（30日）
-      })
-    )
-  );
-
-  const signingInput = `${headerB64}.${payloadB64}`;
 
   // base64 エンコードされた PEM も受け付ける（改行を含む PEM を env var に直接設定しにくい場合）
   const pem = env.LINE_PRIVATE_KEY.includes("-----")
     ? env.LINE_PRIVATE_KEY
     : atob(env.LINE_PRIVATE_KEY);
 
-  const cryptoKey = await crypto.subtle.importKey(
-    "pkcs8",
-    pemToDer(pem),
-    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
+  const privateKey = await importPKCS8(pem, "RS256");
 
-  const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", cryptoKey, enc.encode(signingInput));
-  const jwt = `${signingInput}.${b64url(sig)}`;
+  const jwt = await new SignJWT({
+    iss: env.LINE_CHANNEL_ID,
+    sub: env.LINE_CHANNEL_ID,
+    aud: "https://api.line.biz/",
+    exp: now + 1800, // アサーション JWT の有効期限（30分）
+    token_exp: 2592000, // 発行するトークンの有効期限（30日）
+  })
+    .setProtectedHeader({ alg: "RS256", kid: env.LINE_KEY_ID })
+    .sign(privateKey);
 
   const res = await fetch("https://api.line.biz/oauth2/v2.1/token", {
     method: "POST",
