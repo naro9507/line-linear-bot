@@ -36,7 +36,9 @@ utils/          共通ユーティリティ            ← 全層から参照可
 | 変数名 | 必須 | デフォルト | 説明 |
 |---|---|---|---|
 | `LINE_CHANNEL_SECRET` | ✅ | — | LINE署名検証 |
-| `LINE_CHANNEL_ACCESS_TOKEN` | ✅ | — | LINE API認証 |
+| `LINE_CHANNEL_ID` | ✅ | — | LINEチャネルID |
+| `LINE_PRIVATE_KEY` | ✅ | — | RSA秘密鍵 PEM（または base64 エンコード済み） |
+| `LINE_KEY_ID` | ✅ | — | LINE Developers Console に登録した kid |
 | `LINEAR_API_KEY` | ✅ | — | Linear API認証 |
 | `LINEAR_TEAM_ID` | ✅ | — | LinearチームID |
 | `REMIND_SECRET` | ✅ | — | Cloud Scheduler認証 |

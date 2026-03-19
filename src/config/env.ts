@@ -3,10 +3,9 @@ import * as v from "valibot";
 // 環境変数のスキーマ定義
 const EnvSchema = v.object({
   LINE_CHANNEL_SECRET: v.pipe(v.string(), v.minLength(1, "LINE_CHANNEL_SECRET is required")),
-  LINE_CHANNEL_ACCESS_TOKEN: v.pipe(
-    v.string(),
-    v.minLength(1, "LINE_CHANNEL_ACCESS_TOKEN is required")
-  ),
+  LINE_CHANNEL_ID: v.pipe(v.string(), v.minLength(1, "LINE_CHANNEL_ID is required")),
+  LINE_PRIVATE_KEY: v.pipe(v.string(), v.minLength(1, "LINE_PRIVATE_KEY is required")),
+  LINE_KEY_ID: v.pipe(v.string(), v.minLength(1, "LINE_KEY_ID is required")),
   LINEAR_API_KEY: v.pipe(v.string(), v.minLength(1, "LINEAR_API_KEY is required")),
   LINEAR_TEAM_ID: v.pipe(v.string(), v.minLength(1, "LINEAR_TEAM_ID is required")),
   REMIND_SECRET: v.pipe(v.string(), v.minLength(1, "REMIND_SECRET is required")),
@@ -21,7 +20,9 @@ const EnvSchema = v.object({
 // 環境変数を読み込み・バリデーションする
 const result = v.safeParse(EnvSchema, {
   LINE_CHANNEL_SECRET: process.env.LINE_CHANNEL_SECRET,
-  LINE_CHANNEL_ACCESS_TOKEN: process.env.LINE_CHANNEL_ACCESS_TOKEN,
+  LINE_CHANNEL_ID: process.env.LINE_CHANNEL_ID,
+  LINE_PRIVATE_KEY: process.env.LINE_PRIVATE_KEY,
+  LINE_KEY_ID: process.env.LINE_KEY_ID,
   LINEAR_API_KEY: process.env.LINEAR_API_KEY,
   LINEAR_TEAM_ID: process.env.LINEAR_TEAM_ID,
   REMIND_SECRET: process.env.REMIND_SECRET,
