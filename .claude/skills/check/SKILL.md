@@ -2,9 +2,10 @@
 name: check
 description: Biome lint/formatチェックを実行し、フォーマットエラーは自動修正、lintエラーは適切に対応する
 disable-model-invocation: true
+allowed-tools: Bash(bun:*)
 ---
 
-まず `bun run check` を /home/user/line-linear-bot で実行して結果を確認する。
+まず `bun run check` を実行して結果を確認する。
 
 **フォーマットエラーがある場合：**
 `bun run check:fix` で自動修正する。

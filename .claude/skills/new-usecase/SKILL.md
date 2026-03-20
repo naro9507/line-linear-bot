@@ -5,19 +5,19 @@ disable-model-invocation: true
 argument-hint: <command-name>
 ---
 
-Guide me through adding a new command type to this LINE × Linear bot.
+このLINE × Linear botに新しいコマンドタイプを追加する手順をガイドする。
 
-The command name/type to add is: $ARGUMENTS
+追加するコマンド名: $ARGUMENTS
 
-Follow this checklist in order:
+以下のチェックリストを順番に実施する：
 
-1. **`src/domain/types.ts`** — Add the new command type to the `Command` union type.
+1. **`src/domain/types.ts`** — `Command` ユニオン型に新しいコマンド型を追加する。
 
-2. **`src/infrastructure/gemini.ts`** — Update in two places:
-   - Add the new type to `CommandSchema` (Valibot union)
-   - Add a description of the new command to `SYSTEM_PROMPT`
+2. **`src/infrastructure/gemini.ts`** — 2箇所を更新する：
+   - `CommandSchema`（Valibot union）に新しい型を追加する
+   - `SYSTEM_PROMPT` に新しいコマンドの説明を追加する
 
-3. **`src/usecase/<name>.ts`** — Create a new handler file following this pattern:
+3. **`src/usecase/<name>.ts`** — 以下のパターンで新しいハンドラファイルを作成する：
    ```typescript
    import { getUserByLineId } from "@/config/users";
    import type { Command } from "@/domain/types";
@@ -33,8 +33,8 @@ Follow this checklist in order:
    }
    ```
 
-4. **`src/presentation/webhook.ts`** — Add a case to the `switch (command.type)` block.
+4. **`src/presentation/webhook.ts`** — `switch (command.type)` ブロックにケースを追加する。
 
-5. **`src/presentation/formatMessage.ts`** — Add a formatter function for the new command's reply message.
+5. **`src/presentation/formatMessage.ts`** — 新しいコマンドの返信メッセージ用フォーマッター関数を追加する。
 
-After each step, run `/check` to ensure no lint errors were introduced.
+各ステップ後に `/check` を実行してlintエラーが発生していないことを確認する。
