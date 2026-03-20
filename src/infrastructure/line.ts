@@ -1,4 +1,5 @@
 import { env } from "@/config/env";
+import type { LineRepository } from "@/domain/repositories";
 import { messagingApi } from "@line/bot-sdk";
 
 // LINE Messaging API クライアントの初期化
@@ -21,3 +22,5 @@ export async function pushMessage(lineUserId: string, text: string): Promise<voi
     messages: [{ type: "text", text }],
   });
 }
+
+export const lineRepository = { replyMessage, pushMessage } satisfies LineRepository;

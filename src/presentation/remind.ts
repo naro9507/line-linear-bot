@@ -1,7 +1,7 @@
 import { env } from "@/config/env";
-import { getUserByLinearId } from "@/config/users";
-import { pushMessage } from "@/infrastructure/line";
-import { getRemindIssues } from "@/infrastructure/linear";
+import { userRepository } from "@/config/users";
+import { lineRepository } from "@/infrastructure/line";
+import { linearRepository } from "@/infrastructure/linear";
 import { runReminder } from "@/usecase/remind";
 import { logger } from "@/utils/logger";
 import { Hono } from "hono";
@@ -14,9 +14,9 @@ remindRouter.post("/remind", async (c) => {
 
   try {
     await runReminder({
-      line: { pushMessage },
-      linear: { getRemindIssues },
-      users: { getUserByLinearId },
+      line: lineRepository,
+      linear: linearRepository,
+      users: userRepository,
     });
     return c.json({ success: true });
   } catch (err) {

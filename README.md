@@ -12,12 +12,13 @@ LINE Bot × Linear タスク管理ボット。LINEのメッセージを Gemini A
 ## アーキテクチャ
 
 ```
-presentation/   HTTPルーター・メッセージ整形
+presentation/   HTTPルーター・メッセージ整形（composition root）
     ↓
 usecase/        ビジネスロジック（タスク操作・リマインド）
     ↓
-infrastructure/ 外部API呼び出し（LINE / Linear / Gemini）
-domain/         型定義のみ（types.ts）
+domain/         型定義・リポジトリインターフェース
+    ↑
+infrastructure/ 外部API実装（LINE / Linear / Gemini）
 
 config/         環境変数・ユーザーマッピング  ← 全層から参照可
 utils/          共通ユーティリティ            ← 全層から参照可

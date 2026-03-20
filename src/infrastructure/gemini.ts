@@ -1,4 +1,5 @@
 import { env } from "@/config/env";
+import type { GeminiRepository } from "@/domain/repositories";
 import type { Command } from "@/domain/types";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import * as v from "valibot";
@@ -57,3 +58,5 @@ export async function parseMessageWithGemini(message: string, today: string): Pr
 
   return validated.output as Command;
 }
+
+export const geminiRepository = { parseMessageWithGemini } satisfies GeminiRepository;
