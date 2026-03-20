@@ -1,4 +1,8 @@
-import { replyMessage } from "@/infrastructure/line";
+import type { LineRepository } from "@/domain/repositories";
+
+type HelpDeps = {
+  line: Pick<LineRepository, "replyMessage">;
+};
 
 const HELP_MESSAGE = `📖 使い方ガイド
 
@@ -14,6 +18,6 @@ const HELP_MESSAGE = `📖 使い方ガイド
 
 わからないことがあれば「ヘルプ」と送ってね！`;
 
-export async function handleHelp(replyToken: string): Promise<void> {
-  await replyMessage(replyToken, HELP_MESSAGE);
+export async function handleHelp(deps: HelpDeps, replyToken: string): Promise<void> {
+  await deps.line.replyMessage(replyToken, HELP_MESSAGE);
 }

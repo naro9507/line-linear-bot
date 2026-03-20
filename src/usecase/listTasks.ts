@@ -1,16 +1,24 @@
-import { getUserByLineId } from "@/config/users";
-import { replyMessage } from "@/infrastructure/line";
-import { listMyIssues } from "@/infrastructure/linear";
+import type { LineRepository, LinearRepository, UserRepository } from "@/domain/repositories";
 import { formatListTasksMessage } from "@/presentation/formatMessage";
 import { USER_NOT_FOUND_MESSAGE } from "@/utils/messages";
 
-export async function handleListTasks(lineUserId: string, replyToken: string): Promise<void> {
-  const user = getUserByLineId(lineUserId);
+type ListTasksDeps = {
+  line: Pick<LineRepository, "replyMessage">;
+  linear: Pick<LinearRepository, "listMyIssues">;
+  users: Pick<UserRepository, "getUserByLineId">;
+};
+
+export async function handleListTasks(
+  deps: ListTasksDeps,
+  lineUserId: string,
+  replyToken: string
+): Promise<void> {
+  const user = deps.users.getUserByLineId(lineUserId);
   if (!user) {
-    await replyMessage(replyToken, USER_NOT_FOUND_MESSAGE);
+    await deps.line.replyMessage(replyToken, USER_NOT_FOUND_MESSAGE);
     return;
   }
 
-  const issues = await listMyIssues(user.linearUserId);
-  await replyMessage(replyToken, formatListTasksMessage(issues));
+  const issues = await deps.linear.listMyIssues(user.linearUserId);
+  await deps.line.replyMessage(replyToken, formatListTasksMessage(issues));
 }

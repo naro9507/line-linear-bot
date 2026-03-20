@@ -13,21 +13,22 @@ bun run check:fix  # Biome 自動修正
 
 ## アーキテクチャ
 
-`src/` は薄いレイヤードアーキテクチャ。依存の向きは一方向のみ。
+`src/` は薄いレイヤードアーキテクチャ。依存性逆転（DIP）により usecase は domain インターフェースのみに依存。
 
 ```
-presentation/   HTTPルーター・メッセージ整形
+presentation/   HTTPルーター・メッセージ整形（composition root）
     ↓
 usecase/        ビジネスロジック（タスク操作・リマインド）
     ↓
-infrastructure/ 外部API呼び出し（LINE / Linear / Gemini）
-domain/         型定義のみ（types.ts）
+domain/         型定義・リポジトリインターフェース
+    ↑
+infrastructure/ 外部API実装（LINE / Linear / Gemini）
 
 config/         環境変数・ユーザーマッピング  ← 全層から参照可
 utils/          共通ユーティリティ            ← 全層から参照可
 ```
 
-**上位層から下位層への参照のみ許可。逆方向の参照は禁止。**
+**usecase は domain のインターフェースのみに依存。infrastructure は domain インターフェースを実装（satisfies）。presentation がインスタンスを注入する。**
 
 ## 環境変数
 

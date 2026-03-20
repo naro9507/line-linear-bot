@@ -1,30 +1,23 @@
-import { beforeEach, describe, expect, it, jest, mock } from "bun:test";
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 import type { LinearIssue } from "@/domain/types";
+import { handleCompleteSelect, handleCompleteTask } from "@/usecase/completeTask";
+import { USER_NOT_FOUND_MESSAGE } from "@/utils/messages";
 
-const mockReplyMessage = jest.fn();
-const mockGetUserByLineId = jest.fn();
-const mockGetIssueByIdentifier = jest.fn();
-const mockSearchIssues = jest.fn();
-const mockCompleteIssue = jest.fn();
-const mockFormatCompleteTaskMessage = jest.fn(() => "✅ 完了しました");
-const mockFormatCandidatesMessage = jest.fn(() => "候補リスト");
+const mockReplyMessage = mock();
+const mockGetUserByLineId = mock();
+const mockGetIssueByIdentifier = mock();
+const mockSearchIssues = mock();
+const mockCompleteIssue = mock();
 
-mock.module("@/infrastructure/line", () => ({ replyMessage: mockReplyMessage }));
-mock.module("@/config/users", () => ({ getUserByLineId: mockGetUserByLineId }));
-mock.module("@/infrastructure/linear", () => ({
-  getIssueByIdentifier: mockGetIssueByIdentifier,
-  searchIssues: mockSearchIssues,
-  completeIssue: mockCompleteIssue,
-}));
-mock.module("@/presentation/formatMessage", () => ({
-  formatCompleteTaskMessage: mockFormatCompleteTaskMessage,
-  formatCandidatesMessage: mockFormatCandidatesMessage,
-}));
-mock.module("@/utils/messages", () => ({
-  USER_NOT_FOUND_MESSAGE: "⚠️ 未登録ユーザー",
-}));
-
-const { handleCompleteTask, handleCompleteSelect } = await import("@/usecase/completeTask");
+const deps = {
+  line: { replyMessage: mockReplyMessage },
+  linear: {
+    getIssueByIdentifier: mockGetIssueByIdentifier,
+    searchIssues: mockSearchIssues,
+    completeIssue: mockCompleteIssue,
+  },
+  users: { getUserByLineId: mockGetUserByLineId },
+};
 
 const MOCK_USER = {
   lineUserId: "U123",
@@ -62,15 +55,13 @@ beforeEach(() => {
   mockGetIssueByIdentifier.mockReset();
   mockSearchIssues.mockReset();
   mockCompleteIssue.mockReset();
-  mockFormatCompleteTaskMessage.mockReturnValue("✅ 完了しました");
-  mockFormatCandidatesMessage.mockReturnValue("候補リスト");
 });
 
 describe("handleCompleteTask", () => {
   it("未登録ユーザーには USER_NOT_FOUND_MESSAGE を返す", async () => {
     mockGetUserByLineId.mockReturnValue(undefined);
-    await handleCompleteTask({ type: "complete", query: "ENG-1" }, "U-unknown", "token");
-    expect(mockReplyMessage).toHaveBeenCalledWith("token", "⚠️ 未登録ユーザー");
+    await handleCompleteTask(deps, { type: "complete", query: "ENG-1" }, "U-unknown", "token");
+    expect(mockReplyMessage).toHaveBeenCalledWith("token", USER_NOT_FOUND_MESSAGE);
   });
 
   it("識別子（ENG-1形式）で直接完了する", async () => {
@@ -78,18 +69,18 @@ describe("handleCompleteTask", () => {
     mockGetIssueByIdentifier.mockResolvedValue(MOCK_ISSUES[0]);
     mockCompleteIssue.mockResolvedValue(MOCK_ISSUES[0]);
 
-    await handleCompleteTask({ type: "complete", query: "ENG-1" }, "U123", "token");
+    await handleCompleteTask(deps, { type: "complete", query: "ENG-1" }, "U123", "token");
 
     expect(mockGetIssueByIdentifier).toHaveBeenCalledWith("ENG-1");
     expect(mockCompleteIssue).toHaveBeenCalledWith("i1");
-    expect(mockReplyMessage).toHaveBeenCalledWith("token", "✅ 完了しました");
+    expect(mockReplyMessage).toHaveBeenCalledWith("token", expect.stringContaining("完了しました"));
   });
 
   it("識別子が見つからない場合はエラーメッセージを返す", async () => {
     mockGetUserByLineId.mockReturnValue(MOCK_USER);
     mockGetIssueByIdentifier.mockResolvedValue(null);
 
-    await handleCompleteTask({ type: "complete", query: "ENG-999" }, "U123", "token");
+    await handleCompleteTask(deps, { type: "complete", query: "ENG-999" }, "U123", "token");
 
     expect(mockReplyMessage).toHaveBeenCalledWith(
       "token",
@@ -101,17 +92,17 @@ describe("handleCompleteTask", () => {
     mockGetUserByLineId.mockReturnValue(MOCK_USER);
     mockSearchIssues.mockResolvedValue(MOCK_ISSUES);
 
-    await handleCompleteTask({ type: "complete", query: "タスク" }, "U123", "token");
+    await handleCompleteTask(deps, { type: "complete", query: "タスク" }, "U123", "token");
 
-    expect(mockFormatCandidatesMessage).toHaveBeenCalledWith(MOCK_ISSUES);
-    expect(mockReplyMessage).toHaveBeenCalledWith("token", "候補リスト");
+    expect(mockReplyMessage).toHaveBeenCalledWith("token", expect.stringContaining("ENG-1"));
+    expect(mockReplyMessage).toHaveBeenCalledWith("token", expect.stringContaining("ENG-2"));
   });
 
   it("キーワード検索で0件の場合はエラーメッセージを返す", async () => {
     mockGetUserByLineId.mockReturnValue(MOCK_USER);
     mockSearchIssues.mockResolvedValue([]);
 
-    await handleCompleteTask({ type: "complete", query: "存在しない" }, "U123", "token");
+    await handleCompleteTask(deps, { type: "complete", query: "存在しない" }, "U123", "token");
 
     expect(mockReplyMessage).toHaveBeenCalledWith(
       "token",
@@ -122,7 +113,12 @@ describe("handleCompleteTask", () => {
 
 describe("handleCompleteSelect", () => {
   it("候補が未設定の場合はエラーメッセージを返す", async () => {
-    await handleCompleteSelect({ type: "complete_select", index: 1 }, "U-no-candidates", "token");
+    await handleCompleteSelect(
+      deps,
+      { type: "complete_select", index: 1 },
+      "U-no-candidates",
+      "token"
+    );
     expect(mockReplyMessage).toHaveBeenCalledWith(
       "token",
       expect.stringContaining("選択対象のタスクがありません")
@@ -134,19 +130,22 @@ describe("handleCompleteSelect", () => {
     mockSearchIssues.mockResolvedValue(MOCK_ISSUES);
     mockCompleteIssue.mockResolvedValue(MOCK_ISSUES[1]);
 
-    await handleCompleteTask({ type: "complete", query: "タスク" }, "U-select", "token1");
-    await handleCompleteSelect({ type: "complete_select", index: 2 }, "U-select", "token2");
+    await handleCompleteTask(deps, { type: "complete", query: "タスク" }, "U-select", "token1");
+    await handleCompleteSelect(deps, { type: "complete_select", index: 2 }, "U-select", "token2");
 
     expect(mockCompleteIssue).toHaveBeenCalledWith("i2");
-    expect(mockReplyMessage).toHaveBeenLastCalledWith("token2", "✅ 完了しました");
+    expect(mockReplyMessage).toHaveBeenLastCalledWith(
+      "token2",
+      expect.stringContaining("完了しました")
+    );
   });
 
   it("範囲外の番号はエラーメッセージを返す", async () => {
     mockGetUserByLineId.mockReturnValue(MOCK_USER);
     mockSearchIssues.mockResolvedValue(MOCK_ISSUES);
 
-    await handleCompleteTask({ type: "complete", query: "タスク" }, "U-range", "token1");
-    await handleCompleteSelect({ type: "complete_select", index: 99 }, "U-range", "token2");
+    await handleCompleteTask(deps, { type: "complete", query: "タスク" }, "U-range", "token1");
+    await handleCompleteSelect(deps, { type: "complete_select", index: 99 }, "U-range", "token2");
 
     expect(mockReplyMessage).toHaveBeenLastCalledWith(
       "token2",
@@ -157,17 +156,17 @@ describe("handleCompleteSelect", () => {
   it("TTL（10分）経過後は候補が失効する", async () => {
     const now = 1705276800000; // 2024-01-15T00:00:00Z
     let currentTime = now;
-    const dateSpy = jest.spyOn(Date, "now").mockImplementation(() => currentTime);
+    const dateSpy = spyOn(Date, "now").mockImplementation(() => currentTime);
 
     mockGetUserByLineId.mockReturnValue(MOCK_USER);
     mockSearchIssues.mockResolvedValue(MOCK_ISSUES);
 
-    await handleCompleteTask({ type: "complete", query: "タスク" }, "U-ttl", "token1");
+    await handleCompleteTask(deps, { type: "complete", query: "タスク" }, "U-ttl", "token1");
 
     // TTL（10分）+ 1ms 経過させる
     currentTime = now + 10 * 60 * 1000 + 1;
 
-    await handleCompleteSelect({ type: "complete_select", index: 1 }, "U-ttl", "token2");
+    await handleCompleteSelect(deps, { type: "complete_select", index: 1 }, "U-ttl", "token2");
     expect(mockReplyMessage).toHaveBeenLastCalledWith(
       "token2",
       expect.stringContaining("選択対象のタスクがありません")

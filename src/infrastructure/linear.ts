@@ -1,4 +1,5 @@
 import { env } from "@/config/env";
+import type { LinearRepository } from "@/domain/repositories";
 import type { LinearIssue } from "@/domain/types";
 import { getJSTDateString } from "@/utils/date";
 import { LinearClient } from "@linear/sdk";
@@ -165,6 +166,15 @@ export async function getRemindIssues(): Promise<LinearIssue[]> {
 
   return result.issues.nodes.map(toLinearIssue);
 }
+
+export const linearRepository = {
+  createIssue,
+  listMyIssues,
+  searchIssues,
+  getIssueByIdentifier,
+  completeIssue,
+  getRemindIssues,
+} satisfies LinearRepository;
 
 // ---- 内部型・変換ヘルパー ----
 

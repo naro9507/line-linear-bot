@@ -1,4 +1,7 @@
-import { replyMessage } from "@/infrastructure/line";
+import { userRepository } from "@/config/users";
+import { geminiRepository } from "@/infrastructure/gemini";
+import { lineRepository } from "@/infrastructure/line";
+import { linearRepository } from "@/infrastructure/linear";
 import { verifyLineSignature } from "@/infrastructure/signature";
 import { handleAddTask } from "@/usecase/addTask";
 import { handleCompleteSelect, handleCompleteTask } from "@/usecase/completeTask";
@@ -32,6 +35,14 @@ const WebhookBodySchema = v.object({
 });
 
 type ValidatedWebhookBody = v.InferOutput<typeof WebhookBodySchema>;
+
+// 各レイヤーの deps を composition root としてここで組み立てる
+const deps = {
+  line: lineRepository,
+  linear: linearRepository,
+  users: userRepository,
+  gemini: geminiRepository,
+};
 
 export const webhookRouter = new Hono();
 
@@ -76,23 +87,23 @@ async function processEvents(body: ValidatedWebhookBody): Promise<void> {
 
 async function handleMessage(text: string, lineUserId: string, replyToken: string): Promise<void> {
   try {
-    const command = await parseCommand(text);
+    const command = await parseCommand({ gemini: deps.gemini }, text);
 
     switch (command.type) {
       case "add":
-        await handleAddTask(command, lineUserId, replyToken);
+        await handleAddTask(deps, command, lineUserId, replyToken);
         break;
       case "list":
-        await handleListTasks(lineUserId, replyToken);
+        await handleListTasks(deps, lineUserId, replyToken);
         break;
       case "complete":
-        await handleCompleteTask(command, lineUserId, replyToken);
+        await handleCompleteTask(deps, command, lineUserId, replyToken);
         break;
       case "complete_select":
-        await handleCompleteSelect(command, lineUserId, replyToken);
+        await handleCompleteSelect(deps, command, lineUserId, replyToken);
         break;
       case "help":
-        await handleHelp(replyToken);
+        await handleHelp({ line: deps.line }, replyToken);
         break;
     }
   } catch (err) {
@@ -102,8 +113,9 @@ async function handleMessage(text: string, lineUserId: string, replyToken: strin
       ? "⚠️ タスク管理サービスとの通信でエラーが発生しました。時間をおいて再度お試しください"
       : undefined;
 
-    await (reply ? replyMessage(replyToken, reply) : handleHelp(replyToken)).catch((e) =>
-      logger.error({ err: e }, "エラー返信失敗")
-    );
+    await (reply
+      ? deps.line.replyMessage(replyToken, reply)
+      : handleHelp({ line: deps.line }, replyToken)
+    ).catch((e) => logger.error({ err: e }, "エラー返信失敗"));
   }
 }
