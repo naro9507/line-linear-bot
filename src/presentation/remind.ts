@@ -1,4 +1,7 @@
 import { env } from "@/config/env";
+import { userRepository } from "@/config/users";
+import { lineRepository } from "@/infrastructure/line";
+import { linearRepository } from "@/infrastructure/linear";
 import { runReminder } from "@/usecase/remind";
 import { logger } from "@/utils/logger";
 import { Hono } from "hono";
@@ -10,7 +13,11 @@ remindRouter.post("/remind", async (c) => {
   if (token !== env.REMIND_SECRET) return c.text("Unauthorized", 401);
 
   try {
-    await runReminder();
+    await runReminder({
+      line: lineRepository,
+      linear: linearRepository,
+      users: userRepository,
+    });
     return c.json({ success: true });
   } catch (err) {
     logger.error({ err }, "リマインド処理エラー");

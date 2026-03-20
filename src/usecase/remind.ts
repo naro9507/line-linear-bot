@@ -1,8 +1,12 @@
-import { getUserByLinearId } from "@/config/users";
+import type { LineRepository, LinearRepository, UserRepository } from "@/domain/repositories";
 import type { LinearIssue } from "@/domain/types";
-import { pushMessage } from "@/infrastructure/line";
-import { getRemindIssues } from "@/infrastructure/linear";
 import { getJSTDateString, parseJSTDate } from "@/utils/date";
+
+type ReminderDeps = {
+  line: Pick<LineRepository, "pushMessage">;
+  linear: Pick<LinearRepository, "getRemindIssues">;
+  users: Pick<UserRepository, "getUserByLinearId">;
+};
 
 function buildRemindMessage(todayIssues: LinearIssue[], tomorrowIssues: LinearIssue[]): string {
   const todayStr = getJSTDateString();
@@ -28,8 +32,8 @@ function buildRemindMessage(todayIssues: LinearIssue[], tomorrowIssues: LinearIs
   return `${msg}\n\n今日もがんばりましょう 💪`;
 }
 
-export async function runReminder(): Promise<void> {
-  const issues = await getRemindIssues();
+export async function runReminder(deps: ReminderDeps): Promise<void> {
+  const issues = await deps.linear.getRemindIssues();
   if (issues.length === 0) return;
 
   const today = getJSTDateString();
@@ -52,9 +56,9 @@ export async function runReminder(): Promise<void> {
   await Promise.all(
     Array.from(byUser).map(([linearUserId, { today: t, tomorrow: tm }]) => {
       if (t.length === 0 && tm.length === 0) return Promise.resolve();
-      const mapping = getUserByLinearId(linearUserId);
+      const mapping = deps.users.getUserByLinearId(linearUserId);
       if (!mapping) return Promise.resolve();
-      return pushMessage(mapping.lineUserId, buildRemindMessage(t, tm));
+      return deps.line.pushMessage(mapping.lineUserId, buildRemindMessage(t, tm));
     })
   );
 }

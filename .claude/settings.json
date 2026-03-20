@@ -16,7 +16,20 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd /home/user/line-linear-bot && echo '## セッション終了: CLAUDE.md の更新を確認してください' && git diff --stat HEAD 2>/dev/null | head -20"
+            "command": "cd /home/user/line-linear-bot && DIFF=$(git diff --stat HEAD 2>/dev/null | head -20); printf '{\"systemMessage\": \"セッション終了。変更:\\n%s\\n\\n/update-rules を実行してセッションの学びをルールに記録してください。\"}' \"$DIFF\""
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "CMD=$(jq -r '.tool_input.command' 2>/dev/null); if echo \"$CMD\" | grep -qE 'git push'; then cd /home/user/line-linear-bot && CHECK_OUT=$(bun run check 2>&1); CHECK_EXIT=$?; if [ $CHECK_EXIT -ne 0 ]; then printf '{\"continue\": false, \"stopReason\": \"Biome check 失敗。bun run check:fix で修正してください。\"}'; exit 0; fi; TEST_OUT=$(bun test 2>&1); TEST_EXIT=$?; if [ $TEST_EXIT -ne 0 ]; then printf '{\"continue\": false, \"stopReason\": \"テスト失敗。bun test で確認してください。\"}'; exit 0; fi; fi",
+            "timeout": 120,
+            "statusMessage": "Push前チェック: lint & test 実行中..."
           }
         ]
       }

@@ -1,9 +1,13 @@
-import { getUserByLineId } from "@/config/users";
+import type { LineRepository, LinearRepository, UserRepository } from "@/domain/repositories";
 import type { Command, LinearIssue } from "@/domain/types";
-import { replyMessage } from "@/infrastructure/line";
-import { completeIssue, getIssueByIdentifier, searchIssues } from "@/infrastructure/linear";
 import { formatCandidatesMessage, formatCompleteTaskMessage } from "@/presentation/formatMessage";
 import { USER_NOT_FOUND_MESSAGE } from "@/utils/messages";
+
+type CompleteTaskDeps = {
+  line: Pick<LineRepository, "replyMessage">;
+  linear: Pick<LinearRepository, "searchIssues" | "getIssueByIdentifier" | "completeIssue">;
+  users: Pick<UserRepository, "getUserByLineId">;
+};
 
 const IDENTIFIER_PATTERN = /^[A-Z]+-\d+$/i;
 
@@ -32,29 +36,33 @@ function setCandidates(lineUserId: string, issues: LinearIssue[]): void {
 }
 
 export async function handleCompleteTask(
+  deps: CompleteTaskDeps,
   command: Extract<Command, { type: "complete" }>,
   lineUserId: string,
   replyToken: string
 ): Promise<void> {
-  const user = getUserByLineId(lineUserId);
+  const user = deps.users.getUserByLineId(lineUserId);
   if (!user) {
-    await replyMessage(replyToken, USER_NOT_FOUND_MESSAGE);
+    await deps.line.replyMessage(replyToken, USER_NOT_FOUND_MESSAGE);
     return;
   }
 
   let candidates: LinearIssue[];
 
   if (IDENTIFIER_PATTERN.test(command.query)) {
-    const issue = await getIssueByIdentifier(command.query);
+    const issue = await deps.linear.getIssueByIdentifier(command.query);
     if (!issue) {
-      await replyMessage(replyToken, `⚠️ タスク [${command.query}] が見つかりませんでした`);
+      await deps.line.replyMessage(
+        replyToken,
+        `⚠️ タスク [${command.query}] が見つかりませんでした`
+      );
       return;
     }
     candidates = [issue];
   } else {
-    candidates = await searchIssues(command.query);
+    candidates = await deps.linear.searchIssues(command.query);
     if (candidates.length === 0) {
-      await replyMessage(
+      await deps.line.replyMessage(
         replyToken,
         `⚠️ 「${command.query}」に該当するタスクが見つかりませんでした`
       );
@@ -63,23 +71,24 @@ export async function handleCompleteTask(
   }
 
   if (candidates.length === 1) {
-    const completed = await completeIssue(candidates[0]?.id);
+    const completed = await deps.linear.completeIssue(candidates[0]?.id);
     candidatesMap.delete(lineUserId);
-    await replyMessage(replyToken, formatCompleteTaskMessage(completed));
+    await deps.line.replyMessage(replyToken, formatCompleteTaskMessage(completed));
   } else {
     setCandidates(lineUserId, candidates);
-    await replyMessage(replyToken, formatCandidatesMessage(candidates));
+    await deps.line.replyMessage(replyToken, formatCandidatesMessage(candidates));
   }
 }
 
 export async function handleCompleteSelect(
+  deps: CompleteTaskDeps,
   command: Extract<Command, { type: "complete_select" }>,
   lineUserId: string,
   replyToken: string
 ): Promise<void> {
   const candidates = getCandidates(lineUserId);
   if (!candidates) {
-    await replyMessage(
+    await deps.line.replyMessage(
       replyToken,
       "⚠️ 選択対象のタスクがありません。まず「完了 キーワード」で検索してください"
     );
@@ -88,14 +97,14 @@ export async function handleCompleteSelect(
 
   const index = command.index - 1; // 1始まりを0始まりに変換
   if (command.index < 1 || index >= candidates.length) {
-    await replyMessage(
+    await deps.line.replyMessage(
       replyToken,
       `⚠️ 無効な番号です。1〜${candidates.length}の番号を入力してください`
     );
     return;
   }
 
-  const completed = await completeIssue(candidates[index]?.id);
+  const completed = await deps.linear.completeIssue(candidates[index]?.id);
   candidatesMap.delete(lineUserId);
-  await replyMessage(replyToken, formatCompleteTaskMessage(completed));
+  await deps.line.replyMessage(replyToken, formatCompleteTaskMessage(completed));
 }

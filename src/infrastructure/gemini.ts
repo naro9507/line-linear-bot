@@ -1,4 +1,5 @@
 import { env } from "@/config/env";
+import type { GeminiRepository } from "@/domain/repositories";
 import type { Command } from "@/domain/types";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import * as v from "valibot";
@@ -8,16 +9,12 @@ const genai = new GoogleGenerativeAI(env.GEMINI_API_KEY);
 
 // コマンドのValibotスキーマ
 const CommandSchema = v.union([
-  v.object({
-    type: v.literal("add"),
-    title: v.string(),
-    dueDate: v.nullable(v.string()),
-    assignee: v.nullable(v.string()),
-    priority: v.nullable(v.number()),
-  }),
+  v.object({ type: v.literal("add") }),
   v.object({ type: v.literal("list") }),
   v.object({ type: v.literal("complete"), query: v.string() }),
   v.object({ type: v.literal("complete_select"), index: v.number() }),
+  v.object({ type: v.literal("update"), query: v.string() }),
+  v.object({ type: v.literal("update_select"), index: v.number() }),
   v.object({ type: v.literal("help") }),
 ]);
 
@@ -27,14 +24,32 @@ const SYSTEM_PROMPT = `あなたはLINE Botのコマンドパーサーです。
 余分なテキストやマークダウンは一切出力せず、JSONのみを返してください。
 
 コマンド種別:
-- タスク追加: { "type": "add", "title": "タスク名", "dueDate": "YYYY-MM-DD or null", "assignee": "@alias or null", "priority": 1-4 or null }
+- タスク追加: { "type": "add" }
 - タスク一覧: { "type": "list" }
 - タスク完了: { "type": "complete", "query": "識別子またはキーワード" }
 - 番号選択（完了候補から選ぶ）: { "type": "complete_select", "index": 番号 }
-- ヘルプ/不明: { "type": "help" }
+- タスク更新: { "type": "update", "query": "識別子またはキーワード" }
+- 番号選択（更新候補から選ぶ）: { "type": "update_select", "index": 番号 }
+- ヘルプ/不明: { "type": "help" }`;
 
-優先度: 緊急=1, 高=2, 中=3, 低=4
-日付の相対表現（「明日」「来週月曜」など）は今日の日付を基準にYYYY-MM-DDに変換すること。`;
+const DESCRIPTION_ENHANCE_PROMPT = `あなたはタスク管理ツールの説明文ライターです。
+ユーザーが入力した短いメモや箇条書きを、Linear のタスク説明として適切な文章に整形してください。
+
+ルール:
+- 内容を忠実に保ちつつ、読みやすい日本語に整える
+- 必要に応じて箇条書き・見出しを使ってよい
+- 意味を勝手に追加・変更しない
+- 整形後の文章のみを出力する（前置き・説明は不要）`;
+
+// ユーザー入力の説明文を Gemini で整形する
+export async function enhanceDescription(text: string): Promise<string> {
+  const model = genai.getGenerativeModel({
+    model: env.GEMINI_MODEL,
+    systemInstruction: DESCRIPTION_ENHANCE_PROMPT,
+  });
+  const result = await model.generateContent(text);
+  return result.response.text().trim();
+}
 
 // Gemini SDK でメッセージをコマンドに解析する
 export async function parseMessageWithGemini(message: string, today: string): Promise<Command> {
@@ -57,3 +72,8 @@ export async function parseMessageWithGemini(message: string, today: string): Pr
 
   return validated.output as Command;
 }
+
+export const geminiRepository = {
+  parseMessageWithGemini,
+  enhanceDescription,
+} satisfies GeminiRepository;

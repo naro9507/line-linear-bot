@@ -1,4 +1,5 @@
 import { env } from "@/config/env";
+import type { UserRepository } from "@/domain/repositories";
 import type { UserMapping } from "@/domain/types";
 
 // USER_MAP_JSON 環境変数からユーザーマッピングを注入する
@@ -34,3 +35,12 @@ export const getUserByAlias = (alias: string): UserMapping | undefined => byAlia
 
 export const getUserByLinearId = (linearUserId: string): UserMapping | undefined =>
   byLinearId.get(linearUserId);
+
+export const getAllUsers = (): UserMapping[] => USER_MAP;
+
+export const userRepository = {
+  getUserByLineId,
+  getUserByLinearId,
+  getUserByAlias,
+  getAllUsers,
+} satisfies UserRepository;

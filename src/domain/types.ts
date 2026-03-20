@@ -1,16 +1,18 @@
 // コマンド型定義
 export type Command =
-  | {
-      type: "add";
-      title: string;
-      dueDate?: string | null;
-      assignee?: string | null;
-      priority?: number | null;
-    }
+  | { type: "add" }
   | { type: "list" }
   | { type: "complete"; query: string }
   | { type: "complete_select"; index: number }
+  | { type: "update"; query: string }
+  | { type: "update_select"; index: number }
   | { type: "help" };
+
+// Quick Reply ボタン1項目
+export interface QuickReplyItem {
+  label: string;
+  postbackData: string;
+}
 
 // LINEユーザー ↔ Linearユーザーのマッピング
 export interface UserMapping {
