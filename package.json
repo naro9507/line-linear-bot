@@ -6,6 +6,7 @@
     "build": "bun build ./src/index.ts --outdir ./dist --target bun",
     "check": "biome check .",
     "check:fix": "biome check --write .",
+    "fix": "biome check --write --unsafe .",
     "test": "bun test"
   },
   "dependencies": {
