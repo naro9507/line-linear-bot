@@ -10,10 +10,11 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
-    "pino": "^9.x",
     "@line/bot-sdk": "^9.x",
     "@linear/sdk": "^21.x",
     "hono": "^4.x",
+    "jose": "^6.2.2",
+    "pino": "^9.x",
     "valibot": "^1.x"
   },
   "devDependencies": {
