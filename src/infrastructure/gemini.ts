@@ -28,6 +28,25 @@ const SYSTEM_PROMPT = `あなたはLINE Botのコマンドパーサーです。
 - 番号選択（完了候補から選ぶ）: { "type": "complete_select", "index": 番号 }
 - ヘルプ/不明: { "type": "help" }`;
 
+const DESCRIPTION_ENHANCE_PROMPT = `あなたはタスク管理ツールの説明文ライターです。
+ユーザーが入力した短いメモや箇条書きを、Linear のタスク説明として適切な文章に整形してください。
+
+ルール:
+- 内容を忠実に保ちつつ、読みやすい日本語に整える
+- 必要に応じて箇条書き・見出しを使ってよい
+- 意味を勝手に追加・変更しない
+- 整形後の文章のみを出力する（前置き・説明は不要）`;
+
+// ユーザー入力の説明文を Gemini で整形する
+export async function enhanceDescription(text: string): Promise<string> {
+  const model = genai.getGenerativeModel({
+    model: env.GEMINI_MODEL,
+    systemInstruction: DESCRIPTION_ENHANCE_PROMPT,
+  });
+  const result = await model.generateContent(text);
+  return result.response.text().trim();
+}
+
 // Gemini SDK でメッセージをコマンドに解析する
 export async function parseMessageWithGemini(message: string, today: string): Promise<Command> {
   const model = genai.getGenerativeModel({
@@ -50,4 +69,4 @@ export async function parseMessageWithGemini(message: string, today: string): Pr
   return validated.output as Command;
 }
 
-export const geminiRepository = { parseMessageWithGemini } satisfies GeminiRepository;
+export const geminiRepository = { parseMessageWithGemini, enhanceDescription } satisfies GeminiRepository;

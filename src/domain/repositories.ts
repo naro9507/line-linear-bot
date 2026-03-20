@@ -23,6 +23,7 @@ export interface LinearRepository {
 
 export interface GeminiRepository {
   parseMessageWithGemini(message: string, today: string): Promise<Command>;
+  enhanceDescription(text: string): Promise<string>;
 }
 
 export interface UserRepository {

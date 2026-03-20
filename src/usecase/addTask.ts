@@ -1,4 +1,4 @@
-import type { LineRepository, LinearRepository, UserRepository } from "@/domain/repositories";
+import type { GeminiRepository, LineRepository, LinearRepository, UserRepository } from "@/domain/repositories";
 import type { QuickReplyItem } from "@/domain/types";
 import { formatAddTaskMessage } from "@/presentation/formatMessage";
 
@@ -62,6 +62,7 @@ type AddTaskDeps = {
   line: Pick<LineRepository, "replyMessage" | "replyWithQuickReply">;
   linear: Pick<LinearRepository, "createIssue">;
   users: Pick<UserRepository, "getAllUsers" | "getUserByLineId">;
+  gemini: Pick<GeminiRepository, "enhanceDescription">;
 };
 
 export async function handleAddTaskTextInput(
@@ -207,12 +208,15 @@ async function createAndReply(
   replyToken: string
 ): Promise<void> {
   sessions.delete(lineUserId);
+  const enhancedDescription = description
+    ? await deps.gemini.enhanceDescription(description)
+    : null;
   const issue = await deps.linear.createIssue({
     title: session.title ?? "",
     dueDate: session.dueDate,
     assigneeId: session.assigneeId,
     priority: session.priority,
-    description: description,
+    description: enhancedDescription,
   });
   await deps.line.replyMessage(
     replyToken,
