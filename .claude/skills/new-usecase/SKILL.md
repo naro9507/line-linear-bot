@@ -1,3 +1,10 @@
+---
+name: new-usecase
+description: LINE × Linear botに新しいコマンドタイプを追加する手順をガイドする
+disable-model-invocation: true
+argument-hint: <command-name>
+---
+
 Guide me through adding a new command type to this LINE × Linear bot.
 
 The command name/type to add is: $ARGUMENTS
