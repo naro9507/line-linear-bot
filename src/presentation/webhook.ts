@@ -13,6 +13,13 @@ import { handleCompleteSelect, handleCompleteTask } from "@/usecase/completeTask
 import { handleHelp } from "@/usecase/help";
 import { handleListTasks, handleShowUserTasks } from "@/usecase/listTasks";
 import { parseCommand } from "@/usecase/parseCommand";
+import {
+  handleUpdateSelect,
+  handleUpdateTask,
+  handleUpdateTaskPostback,
+  handleUpdateTaskTextInput,
+  hasActiveUpdateSession,
+} from "@/usecase/updateTask";
 import { logger } from "@/utils/logger";
 import { Hono } from "hono";
 import * as v from "valibot";
@@ -106,6 +113,12 @@ async function handleMessage(text: string, lineUserId: string, replyToken: strin
       return;
     }
 
+    // タスク更新セッション中はGeminiを経由せず直接入力を処理する
+    if (hasActiveUpdateSession(lineUserId)) {
+      await handleUpdateTaskTextInput(deps, lineUserId, text, replyToken);
+      return;
+    }
+
     const command = await parseCommand({ gemini: deps.gemini }, text);
 
     switch (command.type) {
@@ -120,6 +133,12 @@ async function handleMessage(text: string, lineUserId: string, replyToken: strin
         break;
       case "complete_select":
         await handleCompleteSelect(deps, command, lineUserId, replyToken);
+        break;
+      case "update":
+        await handleUpdateTask(deps, command, lineUserId, replyToken);
+        break;
+      case "update_select":
+        await handleUpdateSelect(deps, command, lineUserId, replyToken);
         break;
       case "help":
         await handleHelp({ line: deps.line }, replyToken);
@@ -139,11 +158,7 @@ async function handleMessage(text: string, lineUserId: string, replyToken: strin
   }
 }
 
-async function handlePostback(
-  data: string,
-  lineUserId: string,
-  replyToken: string
-): Promise<void> {
+async function handlePostback(data: string, lineUserId: string, replyToken: string): Promise<void> {
   try {
     if (data.startsWith("list_tasks:")) {
       const linearUserId = data.slice("list_tasks:".length);
@@ -158,6 +173,17 @@ async function handlePostback(
       data === "add_description:skip"
     ) {
       await handleAddTaskPostback(deps, lineUserId, data, replyToken);
+      return;
+    }
+
+    if (
+      data.startsWith("update_field:") ||
+      data.startsWith("update_priority:") ||
+      data.startsWith("update_assignee:") ||
+      data.startsWith("update_state:") ||
+      data === "update_duedate:none"
+    ) {
+      await handleUpdateTaskPostback(deps, lineUserId, data, replyToken);
       return;
     }
   } catch (err) {

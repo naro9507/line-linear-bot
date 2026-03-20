@@ -53,3 +53,21 @@ export function formatCandidatesMessage(issues: LinearIssue[]): string {
   });
   return `${msg}\n番号で選んでください（例: 完了 1）`;
 }
+
+export function formatUpdateTaskMessage(issue: LinearIssue, field: string): string {
+  const today = getJSTDateString();
+  let msg = `✏️ ${field}を更新しました\n[${issue.identifier}] ${issue.title}`;
+  msg += `\nステータス: ${issue.state.name}`;
+  if (issue.dueDate) msg += `\n期限: ${formatDueDate(issue.dueDate, today)}`;
+  if (issue.assignee) msg += `\n担当: ${issue.assignee.name}さん`;
+  msg += `\n🔗 ${issue.url}`;
+  return msg;
+}
+
+export function formatUpdateCandidatesMessage(issues: LinearIssue[]): string {
+  let msg = "🔍 該当するタスクが複数あります：\n";
+  issues.forEach((issue, i) => {
+    msg += `${i + 1}. [${issue.identifier}] ${issue.title}\n`;
+  });
+  return `${msg}\n番号で選んでください（例: 更新 1）`;
+}

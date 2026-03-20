@@ -13,6 +13,8 @@ const CommandSchema = v.union([
   v.object({ type: v.literal("list") }),
   v.object({ type: v.literal("complete"), query: v.string() }),
   v.object({ type: v.literal("complete_select"), index: v.number() }),
+  v.object({ type: v.literal("update"), query: v.string() }),
+  v.object({ type: v.literal("update_select"), index: v.number() }),
   v.object({ type: v.literal("help") }),
 ]);
 
@@ -26,6 +28,8 @@ const SYSTEM_PROMPT = `あなたはLINE Botのコマンドパーサーです。
 - タスク一覧: { "type": "list" }
 - タスク完了: { "type": "complete", "query": "識別子またはキーワード" }
 - 番号選択（完了候補から選ぶ）: { "type": "complete_select", "index": 番号 }
+- タスク更新: { "type": "update", "query": "識別子またはキーワード" }
+- 番号選択（更新候補から選ぶ）: { "type": "update_select", "index": 番号 }
 - ヘルプ/不明: { "type": "help" }`;
 
 const DESCRIPTION_ENHANCE_PROMPT = `あなたはタスク管理ツールの説明文ライターです。
@@ -69,4 +73,7 @@ export async function parseMessageWithGemini(message: string, today: string): Pr
   return validated.output as Command;
 }
 
-export const geminiRepository = { parseMessageWithGemini, enhanceDescription } satisfies GeminiRepository;
+export const geminiRepository = {
+  parseMessageWithGemini,
+  enhanceDescription,
+} satisfies GeminiRepository;

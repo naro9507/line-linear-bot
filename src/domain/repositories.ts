@@ -6,6 +6,12 @@ export interface LineRepository {
   pushMessage(lineUserId: string, text: string): Promise<void>;
 }
 
+export interface TeamState {
+  id: string;
+  name: string;
+  type: string;
+}
+
 export interface LinearRepository {
   createIssue(params: {
     title: string;
@@ -18,6 +24,17 @@ export interface LinearRepository {
   searchIssues(query: string): Promise<LinearIssue[]>;
   getIssueByIdentifier(identifier: string): Promise<LinearIssue | null>;
   completeIssue(id: string): Promise<LinearIssue>;
+  updateIssue(
+    id: string,
+    params: {
+      title?: string;
+      dueDate?: string | null;
+      assigneeId?: string | null;
+      priority?: number | null;
+      stateId?: string;
+    }
+  ): Promise<LinearIssue>;
+  getTeamStates(): Promise<TeamState[]>;
   getRemindIssues(): Promise<LinearIssue[]>;
 }
 

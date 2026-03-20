@@ -1,5 +1,5 @@
 import { env } from "@/config/env";
-import type { LinearRepository } from "@/domain/repositories";
+import type { LinearRepository, TeamState } from "@/domain/repositories";
 import type { LinearIssue } from "@/domain/types";
 import { getJSTDateString } from "@/utils/date";
 import { LinearClient } from "@linear/sdk";
@@ -145,6 +145,59 @@ export async function completeIssue(id: string): Promise<LinearIssue> {
   return toLinearIssue(result.issueUpdate.issue);
 }
 
+// タスクを更新する
+export async function updateIssue(
+  id: string,
+  params: {
+    title?: string;
+    dueDate?: string | null;
+    assigneeId?: string | null;
+    priority?: number | null;
+    stateId?: string;
+  }
+): Promise<LinearIssue> {
+  const input: Record<string, unknown> = {};
+  if (params.title !== undefined) input.title = params.title;
+  if (params.dueDate !== undefined) input.dueDate = params.dueDate;
+  if (params.assigneeId !== undefined) input.assigneeId = params.assigneeId;
+  if (params.priority !== undefined) input.priority = params.priority;
+  if (params.stateId !== undefined) input.stateId = params.stateId;
+
+  const result = await linearClient.client.rawRequest<{
+    issueUpdate: { success: boolean; issue: IssueNode };
+  }>(
+    gql`
+      mutation IssueUpdate($id: String!, $input: IssueUpdateInput!) {
+        issueUpdate(id: $id, input: $input) {
+          success
+          issue { ${ISSUE_FIELDS} }
+        }
+      }
+    `,
+    { id, input }
+  );
+
+  return toLinearIssue(result.issueUpdate.issue);
+}
+
+// チームのステータス一覧を取得する
+export async function getTeamStates(): Promise<TeamState[]> {
+  const result = await linearClient.client.rawRequest<{
+    team: { states: { nodes: Array<{ id: string; name: string; type: string }> } };
+  }>(
+    gql`
+      query GetTeamStates($teamId: String!) {
+        team(id: $teamId) {
+          states { nodes { id name type } }
+        }
+      }
+    `,
+    { teamId: env.LINEAR_TEAM_ID }
+  );
+
+  return result.team.states.nodes;
+}
+
 // リマインド対象のイシューを取得する（期限が今日または明日）
 export async function getRemindIssues(): Promise<LinearIssue[]> {
   const todayStr = getJSTDateString();
@@ -175,6 +228,8 @@ export const linearRepository = {
   searchIssues,
   getIssueByIdentifier,
   completeIssue,
+  updateIssue,
+  getTeamStates,
   getRemindIssues,
 } satisfies LinearRepository;
 
