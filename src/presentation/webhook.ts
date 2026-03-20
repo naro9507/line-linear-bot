@@ -1,4 +1,14 @@
+import { getUserByAlias, getUserByLineId } from "@/config/users";
+import { parseMessageWithGemini } from "@/infrastructure/gemini";
 import { replyMessage } from "@/infrastructure/line";
+import { pushMessage } from "@/infrastructure/line";
+import {
+  completeIssue,
+  createIssue,
+  getIssueByIdentifier,
+  listMyIssues,
+  searchIssues,
+} from "@/infrastructure/linear";
 import { verifyLineSignature } from "@/infrastructure/signature";
 import { handleAddTask } from "@/usecase/addTask";
 import { handleCompleteSelect, handleCompleteTask } from "@/usecase/completeTask";
@@ -32,6 +42,12 @@ const WebhookBodySchema = v.object({
 });
 
 type ValidatedWebhookBody = v.InferOutput<typeof WebhookBodySchema>;
+
+// 各レイヤーの deps を composition root としてここで組み立てる
+const lineDeps = { replyMessage, pushMessage };
+const linearDeps = { createIssue, listMyIssues, searchIssues, getIssueByIdentifier, completeIssue };
+const usersDeps = { getUserByLineId, getUserByAlias };
+const geminiDeps = { parseMessageWithGemini };
 
 export const webhookRouter = new Hono();
 
@@ -76,23 +92,42 @@ async function processEvents(body: ValidatedWebhookBody): Promise<void> {
 
 async function handleMessage(text: string, lineUserId: string, replyToken: string): Promise<void> {
   try {
-    const command = await parseCommand(text);
+    const command = await parseCommand({ gemini: geminiDeps }, text);
 
     switch (command.type) {
       case "add":
-        await handleAddTask(command, lineUserId, replyToken);
+        await handleAddTask(
+          { line: lineDeps, linear: linearDeps, users: usersDeps },
+          command,
+          lineUserId,
+          replyToken
+        );
         break;
       case "list":
-        await handleListTasks(lineUserId, replyToken);
+        await handleListTasks(
+          { line: lineDeps, linear: linearDeps, users: usersDeps },
+          lineUserId,
+          replyToken
+        );
         break;
       case "complete":
-        await handleCompleteTask(command, lineUserId, replyToken);
+        await handleCompleteTask(
+          { line: lineDeps, linear: linearDeps, users: usersDeps },
+          command,
+          lineUserId,
+          replyToken
+        );
         break;
       case "complete_select":
-        await handleCompleteSelect(command, lineUserId, replyToken);
+        await handleCompleteSelect(
+          { line: lineDeps, linear: linearDeps, users: usersDeps },
+          command,
+          lineUserId,
+          replyToken
+        );
         break;
       case "help":
-        await handleHelp(replyToken);
+        await handleHelp({ line: lineDeps }, replyToken);
         break;
     }
   } catch (err) {
@@ -102,8 +137,9 @@ async function handleMessage(text: string, lineUserId: string, replyToken: strin
       ? "⚠️ タスク管理サービスとの通信でエラーが発生しました。時間をおいて再度お試しください"
       : undefined;
 
-    await (reply ? replyMessage(replyToken, reply) : handleHelp(replyToken)).catch((e) =>
-      logger.error({ err: e }, "エラー返信失敗")
-    );
+    await (reply
+      ? replyMessage(replyToken, reply)
+      : handleHelp({ line: lineDeps }, replyToken)
+    ).catch((e) => logger.error({ err: e }, "エラー返信失敗"));
   }
 }
