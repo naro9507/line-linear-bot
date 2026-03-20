@@ -21,7 +21,8 @@ export async function handleListTasks(
 
   const allUsers = deps.users.getAllUsers();
   const items = allUsers.map((user) => ({
-    label: user.linearUserId === self.linearUserId ? `${user.displayName}（自分）` : user.displayName,
+    label:
+      user.linearUserId === self.linearUserId ? `${user.displayName}（自分）` : user.displayName,
     postbackData: `list_tasks:${user.linearUserId}`,
   }));
 

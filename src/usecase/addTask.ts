@@ -1,4 +1,9 @@
-import type { GeminiRepository, LineRepository, LinearRepository, UserRepository } from "@/domain/repositories";
+import type {
+  GeminiRepository,
+  LineRepository,
+  LinearRepository,
+  UserRepository,
+} from "@/domain/repositories";
 import type { QuickReplyItem } from "@/domain/types";
 import { formatAddTaskMessage } from "@/presentation/formatMessage";
 
@@ -155,19 +160,14 @@ async function askAssignee(
   const self = deps.users.getUserByLineId(lineUserId);
   const items: QuickReplyItem[] = deps.users.getAllUsers().map((user) => ({
     label:
-      user.linearUserId === self?.linearUserId
-        ? `${user.displayName}（自分）`
-        : user.displayName,
+      user.linearUserId === self?.linearUserId ? `${user.displayName}（自分）` : user.displayName,
     postbackData: `add_assignee:${user.linearUserId}`,
   }));
   items.push({ label: "なし", postbackData: "add_assignee:none" });
   await deps.line.replyWithQuickReply(replyToken, "担当者は？", items);
 }
 
-async function askPriority(
-  deps: Pick<AddTaskDeps, "line">,
-  replyToken: string
-): Promise<void> {
+async function askPriority(deps: Pick<AddTaskDeps, "line">, replyToken: string): Promise<void> {
   const items: QuickReplyItem[] = [
     { label: "緊急", postbackData: "add_priority:1" },
     { label: "高", postbackData: "add_priority:2" },
@@ -178,22 +178,12 @@ async function askPriority(
   await deps.line.replyWithQuickReply(replyToken, "優先度は？", items);
 }
 
-async function askDueDate(
-  deps: Pick<AddTaskDeps, "line">,
-  replyToken: string
-): Promise<void> {
+async function askDueDate(deps: Pick<AddTaskDeps, "line">, replyToken: string): Promise<void> {
   const items: QuickReplyItem[] = [{ label: "なし", postbackData: "add_duedate:none" }];
-  await deps.line.replyWithQuickReply(
-    replyToken,
-    "期限は？（例: 3/25 または 2026-03-25）",
-    items
-  );
+  await deps.line.replyWithQuickReply(replyToken, "期限は？（例: 3/25 または 2026-03-25）", items);
 }
 
-async function askDescription(
-  deps: Pick<AddTaskDeps, "line">,
-  replyToken: string
-): Promise<void> {
+async function askDescription(deps: Pick<AddTaskDeps, "line">, replyToken: string): Promise<void> {
   const items: QuickReplyItem[] = [{ label: "スキップ", postbackData: "add_description:skip" }];
   await deps.line.replyWithQuickReply(replyToken, "説明を入力してください（任意）", items);
 }
