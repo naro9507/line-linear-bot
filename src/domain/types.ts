@@ -4,6 +4,8 @@ export type Command =
   | { type: "list" }
   | { type: "complete"; query: string }
   | { type: "complete_select"; index: number }
+  | { type: "update"; query: string }
+  | { type: "update_select"; index: number }
   | { type: "help" };
 
 // Quick Reply ボタン1項目
