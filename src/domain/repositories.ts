@@ -1,7 +1,8 @@
-import type { Command, LinearIssue, UserMapping } from "@/domain/types";
+import type { Command, LinearIssue, QuickReplyItem, UserMapping } from "@/domain/types";
 
 export interface LineRepository {
   replyMessage(replyToken: string, text: string): Promise<void>;
+  replyWithQuickReply(replyToken: string, text: string, items: QuickReplyItem[]): Promise<void>;
   pushMessage(lineUserId: string, text: string): Promise<void>;
 }
 
@@ -27,4 +28,5 @@ export interface UserRepository {
   getUserByLineId(lineUserId: string): UserMapping | undefined;
   getUserByLinearId(linearUserId: string): UserMapping | undefined;
   getUserByAlias(alias: string): UserMapping | undefined;
+  getAllUsers(): UserMapping[];
 }

@@ -36,8 +36,11 @@ export const getUserByAlias = (alias: string): UserMapping | undefined => byAlia
 export const getUserByLinearId = (linearUserId: string): UserMapping | undefined =>
   byLinearId.get(linearUserId);
 
+export const getAllUsers = (): UserMapping[] => USER_MAP;
+
 export const userRepository = {
   getUserByLineId,
   getUserByLinearId,
   getUserByAlias,
+  getAllUsers,
 } satisfies UserRepository;

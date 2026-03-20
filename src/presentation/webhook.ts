@@ -6,7 +6,7 @@ import { verifyLineSignature } from "@/infrastructure/signature";
 import { handleAddTask } from "@/usecase/addTask";
 import { handleCompleteSelect, handleCompleteTask } from "@/usecase/completeTask";
 import { handleHelp } from "@/usecase/help";
-import { handleListTasks, handleListUserTasks } from "@/usecase/listTasks";
+import { handleListTasks, handleShowUserTasks } from "@/usecase/listTasks";
 import { parseCommand } from "@/usecase/parseCommand";
 import { logger } from "@/utils/logger";
 import { Hono } from "hono";
@@ -25,6 +25,11 @@ const LineEventSchema = v.looseObject({
       type: v.string(),
       id: v.string(),
       text: v.optional(v.string()),
+    })
+  ),
+  postback: v.optional(
+    v.looseObject({
+      data: v.string(),
     })
   ),
 });
@@ -70,17 +75,20 @@ webhookRouter.post("/webhook", async (c) => {
 });
 
 async function processEvents(body: ValidatedWebhookBody): Promise<void> {
-  // テキストメッセージイベントのみ抽出して並列処理
   const tasks = body.events
-    .filter(
-      (e) =>
-        e.type === "message" &&
-        e.message?.type === "text" &&
-        e.replyToken &&
-        e.source.userId &&
-        e.message.text
-    )
-    .map((e) => handleMessage(e.message?.text ?? "", e.source.userId ?? "", e.replyToken ?? ""));
+    .filter((e) => e.replyToken && e.source.userId)
+    .flatMap((e) => {
+      const lineUserId = e.source.userId ?? "";
+      const replyToken = e.replyToken ?? "";
+
+      if (e.type === "message" && e.message?.type === "text" && e.message.text) {
+        return [handleMessage(e.message.text, lineUserId, replyToken)];
+      }
+      if (e.type === "postback" && e.postback?.data) {
+        return [handlePostback(e.postback.data, replyToken)];
+      }
+      return [];
+    });
 
   await Promise.all(tasks);
 }
@@ -95,9 +103,6 @@ async function handleMessage(text: string, lineUserId: string, replyToken: strin
         break;
       case "list":
         await handleListTasks(deps, lineUserId, replyToken);
-        break;
-      case "list_user":
-        await handleListUserTasks(deps, command.alias, replyToken);
         break;
       case "complete":
         await handleCompleteTask(deps, command, lineUserId, replyToken);
@@ -120,5 +125,19 @@ async function handleMessage(text: string, lineUserId: string, replyToken: strin
       ? deps.line.replyMessage(replyToken, reply)
       : handleHelp({ line: deps.line }, replyToken)
     ).catch((e) => logger.error({ err: e }, "エラー返信失敗"));
+  }
+}
+
+async function handlePostback(data: string, replyToken: string): Promise<void> {
+  try {
+    if (data.startsWith("list_tasks:")) {
+      const linearUserId = data.slice("list_tasks:".length);
+      await handleShowUserTasks(deps, linearUserId, replyToken);
+    }
+  } catch (err) {
+    logger.error({ err, data }, "Postback処理エラー");
+    await deps.line
+      .replyMessage(replyToken, "⚠️ タスク管理サービスとの通信でエラーが発生しました。時間をおいて再度お試しください")
+      .catch((e) => logger.error({ err: e }, "エラー返信失敗"));
   }
 }

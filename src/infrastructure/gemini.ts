@@ -17,7 +17,6 @@ const CommandSchema = v.union([
     priority: v.nullable(v.number()),
   }),
   v.object({ type: v.literal("list") }),
-  v.object({ type: v.literal("list_user"), alias: v.string() }),
   v.object({ type: v.literal("complete"), query: v.string() }),
   v.object({ type: v.literal("complete_select"), index: v.number() }),
   v.object({ type: v.literal("help") }),
@@ -30,8 +29,7 @@ const SYSTEM_PROMPT = `あなたはLINE Botのコマンドパーサーです。
 
 コマンド種別:
 - タスク追加: { "type": "add", "title": "タスク名", "dueDate": "YYYY-MM-DD or null", "assignee": "@alias or null", "priority": 1-4 or null }
-- タスク一覧（自分）: { "type": "list" }
-- タスク一覧（他ユーザー）: { "type": "list_user", "alias": "@alias" }
+- タスク一覧: { "type": "list" }
 - タスク完了: { "type": "complete", "query": "識別子またはキーワード" }
 - 番号選択（完了候補から選ぶ）: { "type": "complete_select", "index": 番号 }
 - ヘルプ/不明: { "type": "help" }

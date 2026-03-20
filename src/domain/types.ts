@@ -8,10 +8,15 @@ export type Command =
       priority?: number | null;
     }
   | { type: "list" }
-  | { type: "list_user"; alias: string }
   | { type: "complete"; query: string }
   | { type: "complete_select"; index: number }
   | { type: "help" };
+
+// Quick Reply ボタン1項目
+export interface QuickReplyItem {
+  label: string;
+  postbackData: string;
+}
 
 // LINEユーザー ↔ Linearユーザーのマッピング
 export interface UserMapping {
