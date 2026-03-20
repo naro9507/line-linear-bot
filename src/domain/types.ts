@@ -1,12 +1,6 @@
 // コマンド型定義
 export type Command =
-  | {
-      type: "add";
-      title: string;
-      dueDate?: string | null;
-      assignee?: string | null;
-      priority?: number | null;
-    }
+  | { type: "add" }
   | { type: "list" }
   | { type: "complete"; query: string }
   | { type: "complete_select"; index: number }

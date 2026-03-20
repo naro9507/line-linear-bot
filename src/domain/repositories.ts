@@ -12,6 +12,7 @@ export interface LinearRepository {
     dueDate?: string | null;
     assigneeId?: string | null;
     priority?: number | null;
+    description?: string | null;
   }): Promise<LinearIssue>;
   listMyIssues(linearUserId: string): Promise<LinearIssue[]>;
   searchIssues(query: string): Promise<LinearIssue[]>;

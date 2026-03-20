@@ -3,7 +3,12 @@ import { geminiRepository } from "@/infrastructure/gemini";
 import { lineRepository } from "@/infrastructure/line";
 import { linearRepository } from "@/infrastructure/linear";
 import { verifyLineSignature } from "@/infrastructure/signature";
-import { handleAddTask } from "@/usecase/addTask";
+import {
+  handleAddTaskPostback,
+  handleAddTaskTextInput,
+  hasActiveAddSession,
+  startAddTask,
+} from "@/usecase/addTask";
 import { handleCompleteSelect, handleCompleteTask } from "@/usecase/completeTask";
 import { handleHelp } from "@/usecase/help";
 import { handleListTasks, handleShowUserTasks } from "@/usecase/listTasks";
@@ -85,7 +90,7 @@ async function processEvents(body: ValidatedWebhookBody): Promise<void> {
         return [handleMessage(e.message.text, lineUserId, replyToken)];
       }
       if (e.type === "postback" && e.postback?.data) {
-        return [handlePostback(e.postback.data, replyToken)];
+        return [handlePostback(e.postback.data, lineUserId, replyToken)];
       }
       return [];
     });
@@ -95,11 +100,17 @@ async function processEvents(body: ValidatedWebhookBody): Promise<void> {
 
 async function handleMessage(text: string, lineUserId: string, replyToken: string): Promise<void> {
   try {
+    // タスク追加セッション中はGeminiを経由せず直接入力を処理する
+    if (hasActiveAddSession(lineUserId)) {
+      await handleAddTaskTextInput(deps, lineUserId, text, replyToken);
+      return;
+    }
+
     const command = await parseCommand({ gemini: deps.gemini }, text);
 
     switch (command.type) {
       case "add":
-        await handleAddTask(deps, command, lineUserId, replyToken);
+        await startAddTask(deps, lineUserId, replyToken);
         break;
       case "list":
         await handleListTasks(deps, lineUserId, replyToken);
@@ -128,16 +139,34 @@ async function handleMessage(text: string, lineUserId: string, replyToken: strin
   }
 }
 
-async function handlePostback(data: string, replyToken: string): Promise<void> {
+async function handlePostback(
+  data: string,
+  lineUserId: string,
+  replyToken: string
+): Promise<void> {
   try {
     if (data.startsWith("list_tasks:")) {
       const linearUserId = data.slice("list_tasks:".length);
       await handleShowUserTasks(deps, linearUserId, replyToken);
+      return;
+    }
+
+    if (
+      data.startsWith("add_assignee:") ||
+      data.startsWith("add_priority:") ||
+      data === "add_duedate:none" ||
+      data === "add_description:skip"
+    ) {
+      await handleAddTaskPostback(deps, lineUserId, data, replyToken);
+      return;
     }
   } catch (err) {
     logger.error({ err, data }, "Postback処理エラー");
     await deps.line
-      .replyMessage(replyToken, "⚠️ タスク管理サービスとの通信でエラーが発生しました。時間をおいて再度お試しください")
+      .replyMessage(
+        replyToken,
+        "⚠️ タスク管理サービスとの通信でエラーが発生しました。時間をおいて再度お試しください"
+      )
       .catch((e) => logger.error({ err: e }, "エラー返信失敗"));
   }
 }

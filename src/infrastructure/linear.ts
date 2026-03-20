@@ -20,6 +20,7 @@ export async function createIssue(params: {
   dueDate?: string | null;
   assigneeId?: string | null;
   priority?: number | null;
+  description?: string | null;
 }): Promise<LinearIssue> {
   const result = await linearClient.client.rawRequest<{
     issueCreate: { success: boolean; issue: IssueNode };
@@ -39,6 +40,7 @@ export async function createIssue(params: {
         ...(params.dueDate ? { dueDate: params.dueDate } : {}),
         ...(params.assigneeId ? { assigneeId: params.assigneeId } : {}),
         ...(params.priority != null ? { priority: params.priority } : {}),
+        ...(params.description ? { description: params.description } : {}),
       },
     }
   );
