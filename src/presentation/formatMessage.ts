@@ -28,14 +28,16 @@ export function formatAddTaskMessage(issue: LinearIssue, assigneeName?: string):
   return msg;
 }
 
-export function formatListTasksMessage(issues: LinearIssue[]): string {
-  if (issues.length === 0) return "📋 現在のタスクはありません";
+export function formatListTasksMessage(issues: LinearIssue[], targetName?: string): string {
+  const header = targetName ? `${targetName}さんのタスク` : "あなたのタスク";
+  if (issues.length === 0) return `📋 ${header}はありません`;
 
   const today = getJSTDateString();
-  let msg = `📋 あなたのタスク（${issues.length}件）`;
+  let msg = `📋 ${header}（${issues.length}件）`;
   for (const issue of issues) {
     msg += `\n\n${priorityIcon(issue.priority)} [${issue.identifier}] ${issue.title}`;
     msg += `\n   期限: ${formatDueDate(issue.dueDate, today)} | ${issue.state.name}`;
+    msg += `\n   🔗 ${issue.url}`;
   }
   return msg;
 }

@@ -6,7 +6,7 @@ import { verifyLineSignature } from "@/infrastructure/signature";
 import { handleAddTask } from "@/usecase/addTask";
 import { handleCompleteSelect, handleCompleteTask } from "@/usecase/completeTask";
 import { handleHelp } from "@/usecase/help";
-import { handleListTasks } from "@/usecase/listTasks";
+import { handleListTasks, handleListUserTasks } from "@/usecase/listTasks";
 import { parseCommand } from "@/usecase/parseCommand";
 import { logger } from "@/utils/logger";
 import { Hono } from "hono";
@@ -95,6 +95,9 @@ async function handleMessage(text: string, lineUserId: string, replyToken: strin
         break;
       case "list":
         await handleListTasks(deps, lineUserId, replyToken);
+        break;
+      case "list_user":
+        await handleListUserTasks(deps, command.alias, replyToken);
         break;
       case "complete":
         await handleCompleteTask(deps, command, lineUserId, replyToken);

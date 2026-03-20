@@ -8,6 +8,7 @@ export type Command =
       priority?: number | null;
     }
   | { type: "list" }
+  | { type: "list_user"; alias: string }
   | { type: "complete"; query: string }
   | { type: "complete_select"; index: number }
   | { type: "help" };
