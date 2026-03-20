@@ -1,6 +1,8 @@
 import { env } from "@/config/env";
-import { messagingApi } from "@line/bot-sdk";
+import { channelAccessToken, messagingApi } from "@line/bot-sdk";
 import { SignJWT, importPKCS8 } from "jose";
+
+const tokenApiClient = new channelAccessToken.ChannelAccessTokenClient({});
 
 // ---- チャネルアクセストークン v2.1 ----
 
@@ -31,21 +33,11 @@ async function issueToken(): Promise<TokenCache> {
     .setProtectedHeader({ alg: "RS256", kid: env.LINE_KEY_ID })
     .sign(privateKey);
 
-  const res = await fetch("https://api.line.biz/oauth2/v2.1/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "client_credentials",
-      client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
-      client_assertion: jwt,
-    }),
-  });
-
-  if (!res.ok) {
-    throw new Error(`LINE token API error: ${res.status} ${await res.text()}`);
-  }
-
-  const data = (await res.json()) as { access_token: string; expires_in: number };
+  const data = await tokenApiClient.issueChannelTokenByJWT(
+    "client_credentials",
+    "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
+    jwt
+  );
   return { token: data.access_token, expiresAt: Date.now() + data.expires_in * 1000 };
 }
 
