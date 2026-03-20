@@ -1,3 +1,13 @@
-Run `bun run check:fix` in /home/user/line-linear-bot and show the full output.
-If there are remaining lint or format errors after auto-fix, explain what needs to be fixed and in which files.
-If there are no errors, confirm that all checks passed.
+まず `bun run check` を /home/user/line-linear-bot で実行して結果を確認する。
+
+**フォーマットエラーがある場合：**
+`bun run check:fix` で自動修正する。
+
+**lintエラーがある場合：**
+エラーの内容を読んで状況に応じて対応する。
+- 型エラーは正しい型を推論・定義して解決する。`any` や `unknown` で無理やり解決しない（ただし、本当に必要な場面では使用してよい）
+- その他のlintエラーはコードを適切に修正する
+- 自動修正できないものは修正内容を説明する
+
+**エラーがない場合：**
+すべてのチェックがパスしたことを確認して報告する。
